@@ -13,7 +13,7 @@ cd ../ && rm -f flutter_service_worker.js .last_build_id
 rm -rf ../../../web_dist
 mkdir ../../../web_dist
 cp -r . ../../../web_dist/
-# re-add web_dist/.htaccess (SPA fallback — see git history) if it was wiped
+# re-add web_dist/.htaccess (SPA fallback + cache headers — see git history)
 ```
 
 `MCHART_REALTIME=off` until Pusher is configured (Reverb doesn't run on
@@ -24,4 +24,7 @@ no Flutter SDK. Unused CanvasKit renderer variants (skwasm, chromium,
 debug `.symbols`) are stripped to keep this under ~12 MB.
 
 Serve as a static site — any subdomain/folder docroot pointed at this
-directory works, no PHP required.
+directory works, no PHP required. `.htaccess` sends `no-cache` for
+`index.html`/`main.dart.js` so Cloudflare (or the browser) never serves a
+stale build after a redeploy — **purge the Cloudflare cache once** after
+pushing a new build, since the previous copy may already be edge-cached.
