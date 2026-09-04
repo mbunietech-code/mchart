@@ -2,6 +2,5 @@
 
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', function () {
-    return view('welcome');
-});
+// API-only backend. Keep this closure-free so `route:cache` works.
+Route::view('/', 'welcome');

@@ -1,0 +1,137 @@
+import 'enums.dart';
+import 'user.dart';
+
+DateTime? _date(Object? v) => v == null ? null : DateTime.tryParse(v.toString())?.toLocal();
+
+class MessageAttachment {
+  MessageAttachment({
+    required this.id,
+    required this.url,
+    this.fileName,
+    this.fileType,
+    this.fileSize,
+    this.durationSeconds,
+  });
+
+  final int id;
+  final String url;
+  final String? fileName;
+  final String? fileType;
+  final int? fileSize;
+  final int? durationSeconds;
+
+  bool get isImage => (fileType ?? '').startsWith('image/');
+  bool get isVoice => (fileType ?? '').startsWith('audio/');
+
+  factory MessageAttachment.fromJson(Map<String, dynamic> j) => MessageAttachment(
+        id: (j['id'] as num).toInt(),
+        url: j['url'] as String? ?? '',
+        fileName: j['file_name'] as String?,
+        fileType: j['file_type'] as String?,
+        fileSize: (j['file_size'] as num?)?.toInt(),
+        durationSeconds: (j['duration_seconds'] as num?)?.toInt(),
+      );
+}
+
+class Message {
+  Message({
+    required this.id,
+    required this.conversationId,
+    required this.kind,
+    required this.createdAt,
+    this.senderId,
+    this.sender,
+    this.body,
+    this.readBy = const [],
+    this.attachments = const [],
+    this.pending = false,
+  });
+
+  final int id;
+  final int conversationId;
+  final int? senderId;
+  final User? sender;
+  final String? body;
+  final MessageKind kind;
+  final List<int> readBy;
+  final List<MessageAttachment> attachments;
+  final DateTime createdAt;
+  final bool pending;
+
+  factory Message.fromJson(Map<String, dynamic> j) => Message(
+        id: (j['id'] as num).toInt(),
+        conversationId: (j['conversation_id'] as num).toInt(),
+        senderId: (j['sender_id'] as num?)?.toInt(),
+        sender: j['sender'] is Map ? User.fromJson(j['sender']) : null,
+        body: j['body'] as String?,
+        kind: MessageKind.from(j['type'] as String?),
+        readBy: (j['read_by'] as List? ?? const []).map((e) => (e as num).toInt()).toList(),
+        attachments: (j['attachments'] as List? ?? const [])
+            .map((e) => MessageAttachment.fromJson(e as Map<String, dynamic>))
+            .toList(),
+        createdAt: _date(j['created_at']) ?? DateTime.now(),
+      );
+}
+
+class Conversation {
+  Conversation({
+    required this.id,
+    required this.type,
+    this.name,
+    this.departmentId,
+    this.createdBy,
+    this.lastMessageAt,
+    this.unreadCount = 0,
+    this.participants = const [],
+    this.latestMessage,
+  });
+
+  final int id;
+  final ConversationType type;
+  final String? name;
+  final int? departmentId;
+  final int? createdBy;
+  final DateTime? lastMessageAt;
+  final int unreadCount;
+  final List<User> participants;
+  final Message? latestMessage;
+
+  /// Display title: channel/group name, or the "other" participant for a DM.
+  String titleFor(int currentUserId) {
+    if (name != null && name!.isNotEmpty) return name!;
+    final other = participants.where((p) => p.id != currentUserId).toList();
+    return other.isEmpty ? 'Direct message' : other.map((p) => p.name).join(', ');
+  }
+
+  User? otherParticipant(int currentUserId) =>
+      participants.where((p) => p.id != currentUserId).firstOrNull;
+
+  factory Conversation.fromJson(Map<String, dynamic> j) => Conversation(
+        id: (j['id'] as num).toInt(),
+        type: ConversationType.from(j['type'] as String?),
+        name: j['name'] as String?,
+        departmentId: (j['department_id'] as num?)?.toInt(),
+        createdBy: (j['created_by'] as num?)?.toInt(),
+        lastMessageAt: _date(j['last_message_at']),
+        unreadCount: (j['unread_count'] as num?)?.toInt() ?? 0,
+        participants: (j['participants'] as List? ?? const [])
+            .map((e) => User.fromJson(e as Map<String, dynamic>))
+            .toList(),
+        latestMessage: j['latest_message'] is Map
+            ? Message.fromJson(j['latest_message'] as Map<String, dynamic>)
+            : null,
+      );
+
+  Conversation copyWith({int? unreadCount, Message? latestMessage, DateTime? lastMessageAt}) =>
+      Conversation(
+        id: id,
+        type: type,
+        name: name,
+        departmentId: departmentId,
+        createdBy: createdBy,
+        lastMessageAt: lastMessageAt ?? this.lastMessageAt,
+        unreadCount: unreadCount ?? this.unreadCount,
+        participants: participants,
+        latestMessage: latestMessage ?? this.latestMessage,
+      );
+}
