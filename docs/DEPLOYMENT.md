@@ -1,194 +1,137 @@
-# Deploying the MChart backend (chart.mbuniehub.com)
+# Deploying the MChart backend
 
-Target: cPanel-style shared host with SSH access and the ability to run
-persistent processes. Domain `chart.mbuniehub.com`, repo checked out at
-`~/chart` (so the backend lives at `~/chart/backend`).
+Reference deploy: **Hostinger shared hosting**, domain `chart.mbuniehub.com`,
+repo at `~/domains/mbuniehub.com/public_html/chart` (so the backend is at
+`.../chart/backend`). Replace `u125644160` with your hosting user.
 
-Replace `u125644160` with your actual cPanel user everywhere below.
-
----
-
-## 1. Point the subdomain at Laravel's `public/`
-
-cPanel → **Domains** (or **Subdomains**) → edit `chart.mbuniehub.com` →
-set **Document Root** to:
-
-```
-/home/u125644160/chart/backend/public
-```
-
-Save. That is the only web-server change needed — `public/.htaccess` ships
-with Laravel and does the rest.
+Shared hosting caveats baked into this guide:
+- `exec()` / `shell_exec()` are disabled → `storage:link` and `artisan tinker`
+  don't work; use the workarounds below.
+- Long-running processes are killed → **Laravel Reverb cannot run**; real-time
+  needs Pusher (§8). Everything else works.
+- MySQL has a low connection cap → cache/session use files, queue runs `sync`.
 
 ---
 
-## 2. PHP version
+## 1. Subdomain → `backend/public`
 
-MChart runs on **Laravel 13 → PHP 8.3+** (8.4 is fine).
-cPanel → **MultiPHP Manager** → set `chart.mbuniehub.com` to PHP 8.3 or 8.4.
-Confirm over SSH:
+hPanel → **Websites** → `mbuniehub.com` → **Subdomains**. Create `chart` and set
+its **document root / custom folder** to:
+
+```
+public_html/chart/backend/public
+```
+
+Wait a few minutes for the auto-SSL certificate.
+
+## 2. PHP 8.3+
+
+hPanel → **Advanced → PHP Configuration** → set `chart.mbuniehub.com` to
+PHP 8.3 or 8.4.
+
+## 3. Code + dependencies
 
 ```bash
-cd ~/chart/backend && php -v
-```
-
-If the CLI `php` is an older version, use the versioned binary the host
-provides (e.g. `ea-php83`, `/usr/local/bin/php83`) for every command below.
-
----
-
-## 3. Install dependencies
-
-```bash
-cd ~/chart/backend
+cd ~/domains/mbuniehub.com/public_html/chart
+git pull                       # first time: git clone <repo> chart
+cd backend
 composer install --no-dev --optimize-autoloader --no-interaction
 ```
 
-No Composer on PATH? `curl -sS https://getcomposer.org/installer | php` then
-use `php composer.phar …`.
-
----
-
-## 4. Environment file
+## 4. Environment
 
 ```bash
-cd ~/chart/backend
 cp .env.production.example .env
-```
-
-Edit `.env` and fill:
-
-- `DB_DATABASE`, `DB_USERNAME`, `DB_PASSWORD` — from cPanel → **MySQL Databases**
-  (the DB user must be **added to the database with ALL PRIVILEGES**).
-- `REVERB_APP_KEY`, `REVERB_APP_SECRET` — long random strings, e.g.
-  `php -r "echo bin2hex(random_bytes(24)).PHP_EOL;"` twice.
-
-Then:
-
-```bash
 php artisan key:generate
-php artisan migrate --force --seed
-php artisan storage:link
+php -r '$e=file_get_contents(".env");
+$e=preg_replace("/^REVERB_APP_KEY=.*/m","REVERB_APP_KEY=".bin2hex(random_bytes(20)),$e);
+$e=preg_replace("/^REVERB_APP_SECRET=.*/m","REVERB_APP_SECRET=".bin2hex(random_bytes(20)),$e);
+file_put_contents(".env",$e);'
 ```
 
-`--seed` creates the roles, departments, an **admin** (`admin@mbunietech.com`
-/ `password`) and a demo team. **Change the admin password immediately after
-first login**, or drop the demo users.
+Edit `.env` (`vi .env` — nano is not installed) and set **`DB_DATABASE`,
+`DB_USERNAME`, `DB_PASSWORD`** from hPanel → **Databases → MySQL**. Keep
+`DB_HOST=localhost` (the `@localhost` grant works; `127.0.0.1` is refused).
 
----
-
-## 5. Permissions
+Verify the credentials directly before migrating:
 
 ```bash
-cd ~/chart/backend
+mysql -u <DB_USERNAME> -p <DB_DATABASE> -e "SELECT 1;"
+```
+
+## 5. Migrate, seed, admin
+
+```bash
+php artisan config:clear
+php artisan migrate --force --seed
+php artisan mchart:admin you@mbuniehub.com --name="Your Name"   # prompts for a password
+```
+
+`--seed` also creates `admin@mbunietech.com` / `password` — **delete or repurpose
+it**: `php artisan mchart:admin admin@mbunietech.com --password=<long-random>` or
+just use your real admin from the command above.
+
+## 6. Storage symlink (exec disabled → do it by hand)
+
+```bash
+ln -sfn "$(pwd)/storage/app/public" "$(pwd)/public/storage"
 chmod -R ug+rwX storage bootstrap/cache
 ```
 
----
-
-## 6. Cache config for production
+## 7. Cache for production
 
 ```bash
-cd ~/chart/backend
 php artisan config:cache
 php artisan route:cache
 php artisan event:cache
 ```
 
-Re-run these after any `.env` or route change. To undo: `php artisan optimize:clear`.
+Re-run all three after any `.env` or route change. Undo with
+`php artisan optimize:clear`.
 
----
+## 8. Real-time (Pusher — shared hosting)
 
-## 7. Queue worker (notifications + push)
+Reverb needs a persistent process shared hosting won't allow. Use Pusher:
 
-Keep one worker alive. With `systemd` unavailable on shared hosting, use a
-**cron watchdog** — add in cPanel → **Cron Jobs** (every minute):
+1. Create a free app at **pusher.com** → Channels.
+2. In `.env`:
+   ```
+   BROADCAST_CONNECTION=pusher
+   PUSHER_APP_ID=...
+   PUSHER_APP_KEY=...
+   PUSHER_APP_SECRET=...
+   PUSHER_APP_CLUSTER=eu
+   ```
+3. `php artisan config:cache`
+4. Build the Flutter client against Pusher (its key/cluster) instead of Reverb.
 
-```
-* * * * * cd /home/u125644160/chart/backend && (pgrep -f 'artisan queue:work' || nohup php artisan queue:work --sleep=3 --tries=3 --max-time=3600 >> storage/logs/queue.log 2>&1 &)
-```
+Until then `BROADCAST_CONNECTION=log` — notifications still persist and the
+in-app notification list still works; only the live WebSocket push is inactive.
 
-If the host has `supervisor` or Passenger, prefer that.
-
----
-
-## 8. Real-time (Laravel Reverb)
-
-### 8a. Run the Reverb process
-
-Reverb binds locally on `127.0.0.1:8080` (set by `REVERB_SERVER_HOST` /
-`REVERB_SERVER_PORT`). Cron watchdog, every minute:
-
-```
-* * * * * cd /home/u125644160/chart/backend && (pgrep -f 'artisan reverb:start' || nohup php artisan reverb:start >> storage/logs/reverb.log 2>&1 &)
-```
-
-### 8b. Proxy WebSockets through Apache
-
-Reverb speaks the Pusher protocol on two path prefixes:
-`/app` (client WebSocket) and `/apps` (server publish API). Both must reach
-`127.0.0.1:8080`. Add to **`~/chart/backend/public/.htaccess`**, *above* the
-`RewriteEngine On` Laravel block:
-
-```apache
-<IfModule mod_proxy.c>
-    RewriteEngine On
-    # WebSocket upgrade for the client channel
-    RewriteCond %{HTTP:Upgrade} =websocket [NC]
-    RewriteRule ^(app/.*)$ ws://127.0.0.1:8080/$1 [P,L]
-    # Plain HTTP for the server publish API + health
-    RewriteRule ^(apps/.*)$ http://127.0.0.1:8080/$1 [P,L]
-</IfModule>
-```
-
-Requires `mod_proxy`, `mod_proxy_http`, `mod_proxy_wstunnel`, `mod_rewrite`
-(standard on cPanel/EA4). If `[P]` is disabled for you, ask support to enable
-`mod_proxy_wstunnel` for the domain, **or** switch to Pusher (see §8d).
-
-### 8c. Verify
-
-```bash
-curl -s https://chart.mbuniehub.com/apps/mchart/health   # -> reverb "OK"/"healthy"
-```
-
-Then from the app, the top bar should read **Operational** (green).
-
-### 8d. Fallback — Pusher instead of Reverb
-
-If the proxy can't be enabled: create a free app at pusher.com, then in `.env`
-set `BROADCAST_CONNECTION=pusher`, `PUSHER_APP_ID/KEY/SECRET/CLUSTER`, and
-build the Flutter client with the matching `--dart-define`s. No Reverb
-process or proxy needed.
-
----
+*(On a VPS/Cloud plan: keep `BROADCAST_CONNECTION=reverb`, run
+`php artisan reverb:start` under a process manager, and proxy `/app` + `/apps`
+to `127.0.0.1:8080` — see the `app/README.md` dart-defines and `config/reverb.php`.)*
 
 ## 9. Point the Flutter client at production
-
-Build with:
 
 ```bash
 cd app
 flutter build windows --release \
-  --dart-define=MCHART_API=https://chart.mbuniehub.com \
-  --dart-define=MCHART_REVERB_HOST=chart.mbuniehub.com \
-  --dart-define=MCHART_REVERB_PORT=443 \
-  --dart-define=MCHART_REVERB_SCHEME=wss \
-  --dart-define=MCHART_REVERB_KEY=<your REVERB_APP_KEY>
+  --dart-define=MCHART_API=https://chart.mbuniehub.com
+# add --dart-define=MCHART_REALTIME=off until Pusher/Reverb is live
 ```
 
-(`web`/`apk`/`macos` targets take the same defines.)
+Web / apk / macos take the same defines.
 
----
-
-## 10. Redeploy after a `git pull`
+## 10. Redeploy after `git pull`
 
 ```bash
-cd ~/chart && git pull
+cd ~/domains/mbuniehub.com/public_html/chart && git pull
 cd backend
 composer install --no-dev --optimize-autoloader
 php artisan migrate --force
-php artisan optimize:clear && php artisan config:cache && php artisan route:cache
-pkill -f 'artisan queue:work'; pkill -f 'artisan reverb:start'   # watchdog cron restarts them
+php artisan optimize:clear
+php artisan config:cache && php artisan route:cache && php artisan event:cache
 ```
 
 ---
@@ -196,9 +139,15 @@ pkill -f 'artisan queue:work'; pkill -f 'artisan reverb:start'   # watchdog cron
 ## Smoke test
 
 ```bash
-curl -s https://chart.mbuniehub.com/up                       # 200
-curl -s https://chart.mbuniehub.com/api/v1/me                 # 401 {"message":"Unauthenticated."}
+curl -s https://chart.mbuniehub.com/up                            # "Application up"
+curl -s https://chart.mbuniehub.com/api/v1/me -H 'Accept: application/json'
+#   -> {"message":"Unauthenticated."}
 curl -s -X POST https://chart.mbuniehub.com/api/v1/auth/login \
   -H 'Accept: application/json' -H 'Content-Type: application/json' \
-  -d '{"email":"admin@mbunietech.com","password":"password"}'  # {"token":...,"user":...}
+  -d '{"email":"you@mbuniehub.com","password":"..."}'
+#   -> {"token":"...","user":{...}}
 ```
+
+If a request 500s, set `APP_DEBUG=true`, `php artisan config:clear`, retry to
+read the exception, then put `APP_DEBUG=false` back and re-cache.
+Logs: `storage/logs/laravel-YYYY-MM-DD.log`.
