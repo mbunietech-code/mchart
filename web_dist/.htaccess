@@ -8,6 +8,16 @@
   RewriteRule . /index.html [L]
 </IfModule>
 
+# Cache policy: index.html and the compiled app must always be revalidated —
+# each deploy replaces main.dart.js in place (no content hash in the
+# filename), so a long-lived cache (e.g. Cloudflare's proxy cache, which
+# otherwise defaults to 7 days for .js) would keep serving a stale build.
+# Static, rarely-changing assets (fonts, icons, CanvasKit) are fine to cache.
 <IfModule mod_headers.c>
-  Header set Cache-Control "no-cache" "expr=%{REQUEST_URI} =~ m#^/index\.html$#"
+  <FilesMatch "\.(html|js)$">
+    Header set Cache-Control "no-cache, must-revalidate"
+  </FilesMatch>
+  <FilesMatch "\.(png|jpg|jpeg|svg|ico|woff2?|ttf|otf|wasm)$">
+    Header set Cache-Control "public, max-age=604800"
+  </FilesMatch>
 </IfModule>
