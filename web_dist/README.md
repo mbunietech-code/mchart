@@ -23,30 +23,28 @@ Committed instead of built on the server because Hostinger shared hosting has
 no Flutter SDK. Unused CanvasKit renderer variants (skwasm, chromium,
 debug `.symbols`) are stripped.
 
-**`flutter_service_worker.js` is deliberately removed, not deployed.**
-Flutter's generated bootstrap `await`s full service-worker
-registration+activation — which itself has to precache every app asset —
-*before* the visible app starts loading at all. On a first visit (no cache
-yet) that turns a normally-parallel load into a fully serial one and the app
-appears to hang on the boot screen far longer than without a service worker.
-Do not re-add this file without changing the loading strategy (e.g. register
-it lazily, after first paint, instead of letting the bootstrap await it).
+## No service worker, no custom boot screen
+
+Two earlier deploys tried to speed up loading: first a service worker for
+instant repeat visits, then a custom HTML boot screen while Flutter loaded.
+Both made real loads worse instead of better — the service worker delayed
+first paint by making Flutter's loader await full precache before starting,
+and once a visitor's browser had one installed it kept serving stale cached
+files after later deploys, which looked like the app failing to open at all.
+
+`index.html` is now close to Flutter's stock generated template: no boot
+screen, no preload hints, no `?ckpreload=1` workaround. **Do not re-add
+`flutter_service_worker.js` or a custom boot screen** without solving the
+stale-cache problem first.
+
+The one thing it keeps is a small inline script that unregisters any
+service worker and clears its caches on load (once per browser tab session,
+then reloads) — this exists purely to un-stick visitors whose browser still
+has the old service worker from before, and can be removed once we're
+confident no visitor has that old worker registered any more.
 
 Serve as a static site — any subdomain/folder docroot pointed at this
 directory works, no PHP required. `.htaccess` sends `no-cache` for
 `index.html`/`*.js` so Cloudflare (or the browser) never serves a stale
 build after a redeploy — **purge the Cloudflare cache once** after pushing a
 new build, since the previous copy may already be edge-cached.
-
-## Load performance
-
-- `index.html` preloads `main.dart.js` and `canvaskit.wasm` in parallel and
-  shows an inline boot screen (the MChart mark + spinner) until the app's
-  first frame paints. Removal of the boot screen is triple-redundant so a
-  missed signal can never leave it stuck forever: Flutter's own
-  `flutter-first-frame` event, a `MutationObserver` watching for a `<canvas>`
-  to appear, and a hard 15-second timeout as a last resort.
-- The CanvasKit-preload workaround for browsers that block Flutter's own
-  module loader (Trusted Types) is **off by default** — it serializes two
-  large downloads and roughly doubles load time, so only enable it for
-  testing by appending `?ckpreload=1` to the URL.

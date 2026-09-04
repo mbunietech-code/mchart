@@ -13,92 +13,32 @@
   <link rel="apple-touch-icon" href="icons/Icon-192.png">
   <link rel="icon" type="image/png" href="favicon.png"/>
 
-  <!-- Warm up the two biggest downloads as early as possible, in parallel. -->
-  <link rel="preload" href="main.dart.js" as="script">
-  <link rel="preload" href="canvaskit/canvaskit.wasm" as="fetch" type="application/wasm" crossorigin>
-
   <title>MChart</title>
   <link rel="manifest" href="manifest.json">
-
-  <style>
-    /* Visible immediately, before any Dart/Flutter code runs, so a slow
-       connection shows "loading" rather than a blank white page. */
-    #mchart-boot {
-      position: fixed; inset: 0; display: flex; align-items: center;
-      justify-content: center; flex-direction: column; gap: 12px;
-      background: #F8FAFC; font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
-    }
-    #mchart-boot .mark {
-      width: 56px; height: 56px; border-radius: 16px; background: #fff;
-      border: 1px solid #E2E8F0; display: flex; align-items: center; justify-content: center;
-      box-shadow: 0 1px 2px rgba(15,23,42,0.06);
-    }
-    #mchart-boot .spinner {
-      width: 20px; height: 20px; border-radius: 999px;
-      border: 2.5px solid #DBE3F0; border-top-color: #1E40AF;
-      animation: mchart-spin 0.8s linear infinite;
-    }
-    @keyframes mchart-spin { to { transform: rotate(360deg); } }
-  </style>
 </head>
 <body>
-  <div id="mchart-boot">
-    <div class="mark">
-      <svg width="30" height="30" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
-        <g transform="translate(64, 64)">
-          <path d="M 192 48 C 96 48 24 116 24 204 C 24 254 48 298 88 326 C 96 332 98 344 94 354 L 78 392 C 74 402 84 412 94 408 L 148 386 C 158 382 170 384 178 390 C 206 400 236 404 268 400 C 254 380 248 356 252 332 C 254 322 262 312 272 312 C 284 312 292 322 290 334 C 286 358 296 376 312 390 C 342 368 360 334 360 296 C 360 208 288 48 192 48 Z" fill="none" stroke="#1B2A6B" stroke-width="30" stroke-linecap="round" stroke-linejoin="round"/>
-          <path d="M 112 210 L 168 266 C 174 272 184 272 190 266 L 314 128" fill="none" stroke="#1B2A6B" stroke-width="30" stroke-linecap="round" stroke-linejoin="round"/>
-          <circle cx="314" cy="128" r="15" fill="#1B2A6B"/>
-        </g>
-      </svg>
-    </div>
-    <div class="spinner"></div>
-  </div>
-
   <script>
-    // Drop the HTML boot screen once the real app has painted. Three
-    // independent signals, first one wins, so a slow/missing event never
-    // leaves the boot screen covering the app forever:
-    //   1. Flutter's own 'flutter-first-frame' event (the intended signal).
-    //   2. A <canvas> actually appearing in the DOM (what first paint means).
-    //   3. A hard timeout, as an absolute last resort.
-    let hidden = false;
-    function hideBoot() {
-      if (hidden) return;
-      hidden = true;
-      document.getElementById('mchart-boot')?.remove();
-    }
-    window.addEventListener('flutter-first-frame', hideBoot);
-    new MutationObserver((_, obs) => {
-      if (document.querySelector('canvas')) { hideBoot(); obs.disconnect(); }
-    }).observe(document.documentElement, { childList: true, subtree: true });
-    setTimeout(hideBoot, 15000);
+    // A previous deploy shipped flutter_service_worker.js, which some
+    // visitors' browsers registered and are still running. That old worker
+    // can keep serving cached copies of index.html/main.dart.js from before
+    // this deploy, or fail to update now that the file is gone — either way
+    // the app looks stuck. Unregister it and clear its caches once, then
+    // reload, so every visitor lands on a clean, current page.
+    (function () {
+      if (!('serviceWorker' in navigator) || sessionStorage.getItem('mchart-sw-cleared')) return;
+      sessionStorage.setItem('mchart-sw-cleared', '1');
+      navigator.serviceWorker.getRegistrations().then(function (regs) {
+        if (!regs.length) return;
+        Promise.all(regs.map(function (r) { return r.unregister(); }))
+          .then(function () {
+            return 'caches' in window
+              ? caches.keys().then(function (keys) { return Promise.all(keys.map(function (k) { return caches.delete(k); })); })
+              : null;
+          })
+          .then(function () { location.reload(); });
+      });
+    })();
   </script>
-  <script>
-    // Some hardened browsers (this app's own dev sandbox included) block the
-    // Flutter engine's own CanvasKit module loader (Trusted Types). Only pay
-    // the cost of a manual, serialized preload there — append ?ckpreload=1.
-    // Everyone else gets Flutter's normal, fully-parallel bootstrap.
-    if (new URLSearchParams(location.search).has('ckpreload')) {
-      (async () => {
-        const base = document.querySelector('base')?.getAttribute('href') || '/';
-        try {
-          const ck = await import(base + 'canvaskit/canvaskit.js');
-          window.flutterCanvasKit = await ck.default({
-            locateFile: (file) => base + 'canvaskit/' + file,
-          });
-        } catch (e) {
-          console.warn('CanvasKit preload skipped:', e);
-        } finally {
-          const s = document.createElement('script');
-          s.src = base + 'flutter_bootstrap.js';
-          s.async = true;
-          document.body.appendChild(s);
-        }
-      })();
-    } else {
-      document.write('<script src="flutter_bootstrap.js" async><' + '/script>');
-    }
-  </script>
+  <script src="flutter_bootstrap.js" async></script>
 </body>
 </html>
