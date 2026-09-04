@@ -32,16 +32,16 @@ class DashboardScreen extends ConsumerWidget {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 PageHeader(
-                  breadcrumb: 'MbuniTech • Usimamizi wa Shughuli',
-                  title: 'Dashibodi ya Meneja — Utendaji & Maendeleo ya Kazi',
+                  breadcrumb: 'MbuniTech • Operations',
+                  title: 'Manager Dashboard — Performance & Delivery',
                   subtitle:
-                      'Muhtasari wa hali ya kazi, tija ya wafanyakazi, na shughuli zilizopangwa ndani ya mtandao wa MChart.',
+                      'An overview of task status, team throughput, and activity across the MChart workspace.',
                   actions: [
                     const _DepartmentFilter(),
                     OutlinedButton.icon(
                       onPressed: () {},
                       icon: const Icon(Icons.download_rounded, size: 16),
-                      label: const Text('Pakua Ripoti'),
+                      label: const Text('Export Report'),
                     ),
                   ],
                 ),
@@ -86,7 +86,7 @@ class _DepartmentFilter extends ConsumerWidget {
             borderRadius: AppRadius.md,
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppColor.textPrimary),
             items: [
-              const DropdownMenuItem(value: null, child: Text('Idara Zote (All Depts)')),
+              const DropdownMenuItem(value: null, child: Text('All Departments')),
               for (final d in list)
                 DropdownMenuItem(value: d.id, child: Text(d.name)),
             ],
@@ -112,40 +112,40 @@ class _Body extends ConsumerWidget {
       children: [
         _StatRow(children: [
           StatCard(
-            label: 'Kazi Zilizo Wazi',
+            label: 'Open Tasks',
             value: '${c.open}',
-            caption: 'zinazohitaji umakini',
-            footLabel: 'Mtiririko wa kazi',
-            footValue: StatusPill.success('Salama'),
+            caption: 'need attention',
+            footLabel: 'Task flow',
+            footValue: StatusPill.success('Healthy'),
           ),
           StatCard(
-            label: 'Zinazoendelea',
+            label: 'In Progress',
             value: '${c.inProgress}',
             badge: StatusPill.brand('In Action', icon: Icons.bolt_rounded),
-            caption: 'kwa sasa mikononi',
-            footLabel: 'Zilizorudishwa marekebisho',
+            caption: 'currently in hand',
+            footLabel: 'Returned for revision',
             footValue: Text('${c.revision}',
                 style: Theme.of(context).textTheme.titleSmall),
           ),
           StatCard(
-            label: 'Zilizokamilika',
+            label: 'Completed',
             value: '${c.completed + c.approved}',
             badge: summary.completionRate != null
                 ? TrendChip(delta: summary.completionRate!.round())
                 : null,
-            caption: 'zimethibitishwa ${c.approved}',
-            footLabel: 'Zilizoidhinishwa kipindi hiki',
+            caption: '${c.approved} approved',
+            footLabel: 'Approved this period',
             footValue: Text('${summary.approvedInPeriod}',
                 style: Theme.of(context).textTheme.titleSmall),
           ),
           StatCard(
-            label: 'Zilizochelewa',
+            label: 'Overdue',
             value: '${c.overdue}',
             badge: c.overdue > 0
-                ? StatusPill.danger('Tahadhari', icon: Icons.warning_amber_rounded)
-                : StatusPill.success('Hakuna'),
-            caption: 'zinahitaji hatua za haraka',
-            footLabel: 'Jumla ya kazi',
+                ? StatusPill.danger('Attention', icon: Icons.warning_amber_rounded)
+                : StatusPill.success('None'),
+            caption: 'need urgent action',
+            footLabel: 'Total tasks',
             footValue: Text('${c.total}',
                 style: Theme.of(context).textTheme.titleSmall),
           ),
@@ -204,17 +204,17 @@ class _CompletionByAssignee extends StatelessWidget {
     final rate = summary.completionRate;
 
     return SectionCard(
-      title: 'Kiwango cha Ukamilishaji Kazi kwa Mfanyakazi',
-      subtitle: 'Kulinganisha kazi zilizoidhinishwa na jumla ya kazi walizopewa.',
+      title: 'Completion Rate by Assignee',
+      subtitle: 'Approved tasks compared with the total each person was assigned.',
       footer: Row(
         children: [
           const Expanded(
             child: Text(
-              'Ufuatiliaji unafanyika kiotomatiki kupitia mfumo wa MChart.',
+              'Tracked automatically by the MChart system.',
               style: TextStyle(fontSize: 11, color: AppColor.textMuted),
             ),
           ),
-          Text('Tazama Uchambuzi wa Kina',
+          Text('View Full Analytics',
               style: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
@@ -237,7 +237,7 @@ class _CompletionByAssignee extends StatelessWidget {
                 Gap.sm,
                 Expanded(
                   child: Text(
-                    'Lengo la Utendaji la MbuniTech: 85% ya kazi kuidhinishwa kila mzunguko.',
+                    'MbuniTech target: 85% of tasks approved every cycle.',
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
                         color: AppColor.brand, fontWeight: FontWeight.w500),
                   ),
@@ -258,8 +258,8 @@ class _CompletionByAssignee extends StatelessWidget {
               padding: EdgeInsets.symmetric(vertical: 24),
               child: EmptyState(
                 icon: Icons.insights_outlined,
-                title: 'Hakuna data ya kutosha bado',
-                message: 'Kazi zitakapoanza kupewa, takwimu zitaonekana hapa.',
+                title: 'Not enough data yet',
+                message: 'Once tasks start being assigned, stats will appear here.',
               ),
             )
           else
@@ -292,10 +292,10 @@ class _AssigneeRow extends StatelessWidget {
             AppAvatar(label: _initials(stat.assignee), size: 24, color: color),
             Gap.sm,
             Expanded(
-              child: Text(stat.assignee ?? 'Haijapangwa',
+              child: Text(stat.assignee ?? 'Unassigned',
                   style: Theme.of(context).textTheme.titleSmall),
             ),
-            Text('${stat.approved}/${stat.total} kazi',
+            Text('${stat.approved}/${stat.total} tasks',
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(fontSize: 11)),
             Gap.md,
             SizedBox(
@@ -310,7 +310,7 @@ class _AssigneeRow extends StatelessWidget {
         AppProgressBar(value: stat.progress, color: color),
         if (stat.overdue > 0) ...[
           Gap.xs,
-          Text('${stat.overdue} zimechelewa',
+          Text('${stat.overdue} overdue',
               style: const TextStyle(fontSize: 11, color: AppColor.danger)),
         ],
       ],
@@ -334,11 +334,11 @@ class _ActivityFeed extends ConsumerWidget {
     final activity = ref.watch(dashboardActivityProvider);
 
     return SectionCard(
-      title: 'Mwenendo wa Hivi Karibuni',
-      subtitle: 'Matukio ya sasa kwenye miradi na mawasiliano.',
-      trailing: const LivePill(online: true, onlineLabel: 'Moja kwa Moja'),
+      title: 'Recent Activity',
+      subtitle: 'What\'s happening across projects and communication right now.',
+      trailing: const LivePill(online: true, onlineLabel: 'Live'),
       footer: Center(
-        child: Text('Tazama Historia Yote ya Matukio',
+        child: Text('View Full Activity History',
             style: TextStyle(
                 fontSize: 12, fontWeight: FontWeight.w600, color: AppColor.brand)),
       ),
@@ -348,7 +348,7 @@ class _ActivityFeed extends ConsumerWidget {
         data: (events) => events.isEmpty
             ? const EmptyState(
                 icon: Icons.history_rounded,
-                title: 'Hakuna matukio bado',
+                title: 'No activity yet',
               )
             : Column(
                 children: [
@@ -389,7 +389,7 @@ class _ActivityRow extends StatelessWidget {
                   Row(
                     children: [
                       Expanded(
-                        child: Text(event.actor ?? 'Mfumo',
+                        child: Text(event.actor ?? 'System',
                             style: Theme.of(context).textTheme.titleSmall),
                       ),
                       Text(Fmt.relative(event.at),

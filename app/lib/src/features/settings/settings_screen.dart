@@ -41,16 +41,16 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 PageHeader(
-                  breadcrumb: 'Mfumo wa Uendeshaji • Usimamizi wa Shirika',
-                  title: 'Mipangilio ya Msimamizi',
+                  breadcrumb: 'Operations • Organization Management',
+                  title: 'Admin Settings',
                   subtitle:
-                      'Simamia watumiaji, idara, na majukumu ndani ya mtandao wa MbuniTech.',
+                      'Manage users, departments, and roles across the MbuniTech workspace.',
                   actions: [
                     if (isAdmin && _tab == 0)
                       FilledButton.icon(
                         onPressed: () => showUserForm(context, ref),
                         icon: const Icon(Icons.person_add_alt_1_rounded, size: 18),
-                        label: const Text('Alika Mtumiaji'),
+                        label: const Text('Invite User'),
                       ),
                   ],
                 ),
@@ -63,7 +63,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                           data: (p) => StatChip(
                             icon: Icons.groups_outlined,
                             value: '${p.total}',
-                            label: 'Wafanyakazi',
+                            label: 'Staff',
                           ),
                           orElse: () => const SizedBox.shrink(),
                         ),
@@ -71,7 +71,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                       data: (d) => StatChip(
                         icon: Icons.apartment_rounded,
                         value: '${d.length}',
-                        label: 'Idara Zilizosajiliwa',
+                        label: 'Departments',
                       ),
                       orElse: () => const SizedBox.shrink(),
                     ),
@@ -87,8 +87,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   const AppCard(
                     child: EmptyState(
                       icon: Icons.lock_outline_rounded,
-                      title: 'Sehemu ya Msimamizi',
-                      message: 'Ni Admin pekee anayeweza kufikia mipangilio hii.',
+                      title: 'Admin Only',
+                      message: 'Only an Admin can access these settings.',
                     ),
                   )
                 else
@@ -111,7 +111,7 @@ class _Tabs extends StatelessWidget {
   final int index;
   final ValueChanged<int> onChanged;
 
-  static const _labels = ['Watumiaji (Users)', 'Idara (Departments)', 'Majukumu (Roles)'];
+  static const _labels = ['Users', 'Departments', 'Roles & Permissions'];
 
   @override
   Widget build(BuildContext context) {
@@ -175,7 +175,7 @@ class _UsersTab extends ConsumerWidget {
                 Expanded(
                   child: TextField(
                     decoration: const InputDecoration(
-                      hintText: 'Tafuta kwa jina, barua pepe, au idara...',
+                      hintText: 'Search by name, email, or department...',
                       prefixIcon: Icon(Icons.search_rounded, size: 18),
                     ),
                     onChanged: (v) => ref.read(userQueryProvider.notifier).state =
@@ -186,9 +186,9 @@ class _UsersTab extends ConsumerWidget {
                 departments.maybeWhen(
                   data: (list) => _FilterDropdown<int?>(
                     value: query.departmentId,
-                    hint: 'Idara Zote',
+                    hint: 'All Departments',
                     items: {
-                      null: 'Idara Zote',
+                      null: 'All Departments',
                       for (final d in list) d.id: d.name,
                     },
                     onChanged: (v) => ref.read(userQueryProvider.notifier).state =
@@ -199,9 +199,9 @@ class _UsersTab extends ConsumerWidget {
                 Gap.sm,
                 _FilterDropdown<String?>(
                   value: query.role,
-                  hint: 'Majukumu Yote',
+                  hint: 'All Roles',
                   items: const {
-                    null: 'Majukumu Yote',
+                    null: 'All Roles',
                     'admin': 'Admin',
                     'manager': 'Manager',
                     'staff': 'Staff',
@@ -228,7 +228,7 @@ class _UsersTab extends ConsumerWidget {
                     padding: EdgeInsets.all(28),
                     child: EmptyState(
                       icon: Icons.person_search_outlined,
-                      title: 'Hakuna mtumiaji',
+                      title: 'No users found',
                     ),
                   )
                 else
@@ -239,7 +239,7 @@ class _UsersTab extends ConsumerWidget {
                   child: Row(
                     children: [
                       Text(
-                        'Inaonyesha ${page.items.length} kati ya ${page.total}',
+                        'Showing ${page.items.length} of ${page.total}',
                         style: Theme.of(context).textTheme.bodySmall,
                       ),
                       const Spacer(),
@@ -324,11 +324,11 @@ class _UserHeaderRow extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
       child: Row(
         children: [
-          cell('Mfanyakazi', 4),
-          cell('Idara', 2),
-          cell('Jukumu', 2),
-          cell('Hali', 2),
-          cell('Mara ya mwisho', 2),
+          cell('Staff', 4),
+          cell('Department', 2),
+          cell('Role', 2),
+          cell('Status', 2),
+          cell('Last Seen', 2),
           const SizedBox(width: 40),
         ],
       ),
@@ -392,7 +392,7 @@ class _UserRow extends ConsumerWidget {
           Expanded(
             flex: 2,
             child: Text(
-              user.isOnline ? 'Mtandaoni' : Fmt.relative(user.lastSeenAt),
+              user.isOnline ? 'Online' : Fmt.relative(user.lastSeenAt),
               style: Theme.of(context).textTheme.bodySmall?.copyWith(fontSize: 11),
             ),
           ),
@@ -411,10 +411,10 @@ class _UserRow extends ConsumerWidget {
                 }
               },
               itemBuilder: (_) => [
-                const PopupMenuItem(value: 'edit', child: Text('Hariri')),
+                const PopupMenuItem(value: 'edit', child: Text('Edit')),
                 PopupMenuItem(
                   value: 'toggle',
-                  child: Text(user.isActive ? 'Zima akaunti' : 'Washa akaunti'),
+                  child: Text(user.isActive ? 'Deactivate account' : 'Activate account'),
                 ),
               ],
             ),
@@ -488,7 +488,7 @@ class _DepartmentsTab extends ConsumerWidget {
                           style: Theme.of(context).textTheme.bodySmall),
                     ],
                     Gap.md,
-                    Text('${list[i].usersCount ?? 0} wafanyakazi',
+                    Text('${list[i].usersCount ?? 0} staff',
                         style: Theme.of(context)
                             .textTheme
                             .bodySmall
@@ -511,12 +511,12 @@ class _RolesTab extends StatelessWidget {
   const _RolesTab();
 
   static const _matrix = {
-    'Kuona kazi zote za idara': [true, true, false],
-    'Kutengeneza & kupangia kazi': [true, true, false],
-    'Kuidhinisha / kurudisha kazi': [true, true, false],
-    'Kuanza & kukamilisha kazi': [true, true, true],
-    'Kusimamia watumiaji & idara': [true, false, false],
-    'Kutuma ujumbe kwenye channels': [true, true, true],
+    'View all department tasks': [true, true, false],
+    'Create & assign tasks': [true, true, false],
+    'Approve / return tasks': [true, true, false],
+    'Start & complete tasks': [true, true, true],
+    'Manage users & departments': [true, false, false],
+    'Post messages in channels': [true, true, true],
   };
 
   @override
@@ -530,7 +530,7 @@ class _RolesTab extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
             child: Row(
               children: [
-                Expanded(flex: 4, child: Text('RUHUSA', style: Theme.of(context).textTheme.labelSmall)),
+                Expanded(flex: 4, child: Text('PERMISSION', style: Theme.of(context).textTheme.labelSmall)),
                 for (final r in ['ADMIN', 'MANAGER', 'STAFF'])
                   Expanded(
                     child: Center(

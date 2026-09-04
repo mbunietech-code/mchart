@@ -49,7 +49,7 @@ class _TaskFormState extends ConsumerState<_TaskForm> {
 
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate() || _assigneeId == null) {
-      setState(() => _error = _assigneeId == null ? 'Chagua mfanyakazi wa kupewa kazi.' : null);
+      setState(() => _error = _assigneeId == null ? 'Choose who this task is assigned to.' : null);
       return;
     }
     setState(() {
@@ -92,19 +92,19 @@ class _TaskFormState extends ConsumerState<_TaskForm> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text(_isEdit ? 'Hariri Kazi' : 'Kazi Mpya',
+            Text(_isEdit ? 'Edit Task' : 'New Task',
                 style: Theme.of(context).textTheme.titleLarge),
             Gap.lg,
             TextFormField(
               controller: _title,
-              decoration: const InputDecoration(labelText: 'Kichwa cha kazi'),
-              validator: (v) => (v == null || v.trim().isEmpty) ? 'Weka kichwa' : null,
+              decoration: const InputDecoration(labelText: 'Task title'),
+              validator: (v) => (v == null || v.trim().isEmpty) ? 'Enter a title' : null,
             ),
             Gap.md,
             TextFormField(
               controller: _description,
               maxLines: 3,
-              decoration: const InputDecoration(labelText: 'Maelezo (hiari)'),
+              decoration: const InputDecoration(labelText: 'Description (optional)'),
             ),
             Gap.md,
             Row(
@@ -112,7 +112,7 @@ class _TaskFormState extends ConsumerState<_TaskForm> {
                 Expanded(
                   child: DropdownButtonFormField<TaskPriority>(
                     initialValue: _priority,
-                    decoration: const InputDecoration(labelText: 'Kipaumbele'),
+                    decoration: const InputDecoration(labelText: 'Priority'),
                     items: [
                       for (final p in TaskPriority.values)
                         DropdownMenuItem(value: p, child: Text(p.label)),
@@ -133,10 +133,10 @@ class _TaskFormState extends ConsumerState<_TaskForm> {
                       if (picked != null) setState(() => _deadline = picked);
                     },
                     child: InputDecorator(
-                      decoration: const InputDecoration(labelText: 'Tarehe ya mwisho'),
+                      decoration: const InputDecoration(labelText: 'Deadline'),
                       child: Text(
                         _deadline == null
-                            ? 'Hakuna'
+                            ? 'None'
                             : '${_deadline!.day}/${_deadline!.month}/${_deadline!.year}',
                       ),
                     ),
@@ -151,7 +151,7 @@ class _TaskFormState extends ConsumerState<_TaskForm> {
               data: (page) => DropdownButtonFormField<int>(
                 initialValue: _assigneeId,
                 isExpanded: true,
-                decoration: const InputDecoration(labelText: 'Mpewe kazi'),
+                decoration: const InputDecoration(labelText: 'Assignee'),
                 items: [
                   for (final u in page.items)
                     DropdownMenuItem(value: u.id, child: Text('${u.name} · ${u.role.label}')),
@@ -169,12 +169,12 @@ class _TaskFormState extends ConsumerState<_TaskForm> {
               children: [
                 TextButton(
                   onPressed: () => Navigator.pop(context),
-                  child: const Text('Ghairi'),
+                  child: const Text('Cancel'),
                 ),
                 Gap.sm,
                 FilledButton(
                   onPressed: _busy ? null : _submit,
-                  child: Text(_busy ? 'Inahifadhi...' : (_isEdit ? 'Hifadhi' : 'Tengeneza')),
+                  child: Text(_busy ? 'Saving...' : (_isEdit ? 'Save' : 'Create')),
                 ),
               ],
             ),

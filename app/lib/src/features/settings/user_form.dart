@@ -96,26 +96,26 @@ class _UserFormState extends ConsumerState<_UserForm> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text(_isEdit ? 'Hariri Mtumiaji' : 'Alika Mtumiaji Mpya',
+            Text(_isEdit ? 'Edit User' : 'Invite New User',
                 style: Theme.of(context).textTheme.titleLarge),
             Gap.lg,
             TextFormField(
               controller: _name,
-              decoration: const InputDecoration(labelText: 'Jina kamili'),
-              validator: (v) => (v == null || v.trim().isEmpty) ? 'Weka jina' : null,
+              decoration: const InputDecoration(labelText: 'Full name'),
+              validator: (v) => (v == null || v.trim().isEmpty) ? 'Enter a name' : null,
             ),
             Gap.md,
             TextFormField(
               controller: _email,
               keyboardType: TextInputType.emailAddress,
-              decoration: const InputDecoration(labelText: 'Barua pepe'),
+              decoration: const InputDecoration(labelText: 'Email'),
               validator: (v) =>
-                  (v == null || !v.contains('@')) ? 'Weka barua pepe sahihi' : null,
+                  (v == null || !v.contains('@')) ? 'Enter a valid email address' : null,
             ),
             Gap.md,
             TextFormField(
               controller: _phone,
-              decoration: const InputDecoration(labelText: 'Simu (hiari)'),
+              decoration: const InputDecoration(labelText: 'Phone (optional)'),
             ),
             Gap.md,
             Row(
@@ -123,7 +123,7 @@ class _UserFormState extends ConsumerState<_UserForm> {
                 Expanded(
                   child: DropdownButtonFormField<UserRole>(
                     initialValue: _role,
-                    decoration: const InputDecoration(labelText: 'Jukumu'),
+                    decoration: const InputDecoration(labelText: 'Role'),
                     items: [
                       for (final r in UserRole.values)
                         DropdownMenuItem(value: r, child: Text(r.label)),
@@ -137,9 +137,9 @@ class _UserFormState extends ConsumerState<_UserForm> {
                     data: (list) => DropdownButtonFormField<int?>(
                       initialValue: _departmentId,
                       isExpanded: true,
-                      decoration: const InputDecoration(labelText: 'Idara'),
+                      decoration: const InputDecoration(labelText: 'Department'),
                       items: [
-                        const DropdownMenuItem(value: null, child: Text('Hakuna')),
+                        const DropdownMenuItem(value: null, child: Text('None')),
                         for (final d in list)
                           DropdownMenuItem(value: d.id, child: Text(d.name)),
                       ],
@@ -155,11 +155,11 @@ class _UserFormState extends ConsumerState<_UserForm> {
               controller: _password,
               obscureText: true,
               decoration: InputDecoration(
-                labelText: _isEdit ? 'Nenosiri jipya (hiari)' : 'Nenosiri la awali',
+                labelText: _isEdit ? 'New password (optional)' : 'Initial password',
               ),
               validator: (v) {
                 if (_isEdit) return null;
-                return (v == null || v.length < 8) ? 'Angalau herufi 8' : null;
+                return (v == null || v.length < 8) ? 'At least 8 characters' : null;
               },
             ),
             if (_error != null) ...[
@@ -172,12 +172,12 @@ class _UserFormState extends ConsumerState<_UserForm> {
               children: [
                 TextButton(
                   onPressed: () => Navigator.pop(context),
-                  child: const Text('Ghairi'),
+                  child: const Text('Cancel'),
                 ),
                 Gap.sm,
                 FilledButton(
                   onPressed: _busy ? null : _submit,
-                  child: Text(_busy ? 'Inahifadhi...' : (_isEdit ? 'Hifadhi' : 'Alika')),
+                  child: Text(_busy ? 'Saving...' : (_isEdit ? 'Save' : 'Invite')),
                 ),
               ],
             ),

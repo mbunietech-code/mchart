@@ -23,12 +23,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   bool _busy = false;
   String? _error;
 
-  static const _demo = {
-    'Manager': 'manager@mbunietech.com',
-    'Staff': 'dev1@mbunietech.com',
-    'Admin': 'admin@mbunietech.com',
-  };
-
   @override
   void dispose() {
     _email.dispose();
@@ -43,6 +37,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       _error = null;
     });
     try {
+      // One login for everyone — the backend returns the account's role and
+      // the app routes/filters every screen from that, there is no separate
+      // "manager login" or "staff login".
       await ref.read(authControllerProvider.notifier).login(
             email: _email.text.trim(),
             password: _password.text,
@@ -93,7 +90,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                             children: [
                               Text('MChart',
                                   style: t.titleLarge?.copyWith(fontSize: 18)),
-                              Text('Mbunie Chart — MbuniTech Workspace',
+                              Text('MbuniTech Workspace',
                                   overflow: TextOverflow.ellipsis,
                                   style: t.bodySmall?.copyWith(fontSize: 11)),
                             ],
@@ -102,40 +99,29 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       ],
                     ),
                     Gap.xl,
-                    Text('Ingia Kazini', style: t.titleLarge),
+                    Text('Sign in', style: t.titleLarge),
                     Gap.xs,
                     Text(
-                      'Ingia kwenye mfumo wa mawasiliano na usimamizi wa kazi wa MbuniTech.',
+                      'Sign in to the MbuniTech communication and task workspace.',
                       style: t.bodySmall?.copyWith(color: const Color(0xFF5A6B9C)),
                     ),
-                    Gap.lg,
-                    Text('Akaunti za Mfano (Quick Switch)',
-                        style: t.labelSmall),
-                    Gap.sm,
-                    _DemoSwitcher(
-                      onPick: (email) {
-                        _email.text = email;
-                        _password.text = 'password';
-                      },
-                      accounts: _demo,
-                    ),
-                    Gap.lg,
-                    _FieldLabel('Barua Pepe'),
+                    Gap.xl,
+                    _FieldLabel('Email'),
                     Gap.xs,
                     TextFormField(
                       controller: _email,
                       keyboardType: TextInputType.emailAddress,
                       autofillHints: const [AutofillHints.username],
                       decoration: const InputDecoration(
-                        hintText: 'mfano. juma@mbunietech.co.tz',
+                        hintText: 'you@mbunietech.com',
                         prefixIcon: Icon(Icons.mail_outline_rounded, size: 18),
                       ),
                       validator: (v) => (v == null || !v.contains('@'))
-                          ? 'Weka barua pepe sahihi'
+                          ? 'Enter a valid email address'
                           : null,
                     ),
                     Gap.md,
-                    _FieldLabel('Nenosiri'),
+                    _FieldLabel('Password'),
                     Gap.xs,
                     TextFormField(
                       controller: _password,
@@ -156,7 +142,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         ),
                       ),
                       validator: (v) =>
-                          (v == null || v.isEmpty) ? 'Weka nenosiri' : null,
+                          (v == null || v.isEmpty) ? 'Enter your password' : null,
                     ),
                     Gap.sm,
                     Row(
@@ -171,7 +157,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         ),
                         Gap.xs,
                         Flexible(
-                          child: Text('Nikumbuke',
+                          child: Text('Remember me',
                               overflow: TextOverflow.ellipsis, style: t.bodySmall),
                         ),
                         const Spacer(),
@@ -182,7 +168,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                             minimumSize: const Size(0, 0),
                             tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                           ),
-                          child: const Text('Umesahau nenosiri?',
+                          child: const Text('Forgot password?',
                               overflow: TextOverflow.ellipsis),
                         ),
                       ],
@@ -208,7 +194,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                               mainAxisSize: MainAxisSize.min,
                               children: [
                                 Flexible(
-                                  child: Text('Ingia Kazini',
+                                  child: Text('Sign in',
                                       overflow: TextOverflow.ellipsis),
                                 ),
                                 SizedBox(width: 6),
@@ -228,7 +214,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         ),
                         Gap.xs,
                         Flexible(
-                          child: Text('Mfumo ipo hewani kikamilifu (99.98%)',
+                          child: Text('All systems operational',
                               overflow: TextOverflow.ellipsis,
                               style: t.bodySmall?.copyWith(
                                   fontSize: 11, color: AppColor.success)),
@@ -237,7 +223,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     ),
                     Gap.md,
                     Text(
-                      '© 2026 MbuniTech Technologies Limited. Haki zote zimehifadhiwa.',
+                      '© 2026 MbuniTech Technologies Limited. All rights reserved.',
                       textAlign: TextAlign.center,
                       style: t.bodySmall?.copyWith(fontSize: 10.5, color: AppColor.textMuted),
                     ),
@@ -268,65 +254,6 @@ class _FieldLabel extends StatelessWidget {
         style: const TextStyle(
             fontSize: 12, fontWeight: FontWeight.w600, color: AppColor.textPrimary),
       );
-}
-
-class _DemoSwitcher extends StatefulWidget {
-  const _DemoSwitcher({required this.onPick, required this.accounts});
-  final void Function(String email) onPick;
-  final Map<String, String> accounts;
-
-  @override
-  State<_DemoSwitcher> createState() => _DemoSwitcherState();
-}
-
-class _DemoSwitcherState extends State<_DemoSwitcher> {
-  int _selected = 0;
-
-  @override
-  Widget build(BuildContext context) {
-    final entries = widget.accounts.entries.toList();
-    return Container(
-      padding: const EdgeInsets.all(3),
-      decoration: BoxDecoration(
-        color: AppColor.surfaceMuted,
-        borderRadius: AppRadius.md,
-        border: Border.all(color: AppColor.border),
-      ),
-      child: Row(
-        children: [
-          for (var i = 0; i < entries.length; i++)
-            Expanded(
-              child: GestureDetector(
-                onTap: () {
-                  setState(() => _selected = i);
-                  widget.onPick(entries[i].value);
-                },
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 150),
-                  padding: const EdgeInsets.symmetric(vertical: 7),
-                  alignment: Alignment.center,
-                  decoration: BoxDecoration(
-                    color: _selected == i ? AppColor.surface : Colors.transparent,
-                    borderRadius: AppRadius.sm,
-                    boxShadow: _selected == i ? AppShadow.segment : null,
-                  ),
-                  child: Text(
-                    entries[i].key,
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: _selected == i
-                          ? AppColor.textPrimary
-                          : AppColor.textSecondary,
-                    ),
-                  ),
-                ),
-              ),
-            ),
-        ],
-      ),
-    );
-  }
 }
 
 class _ErrorBanner extends StatelessWidget {
@@ -374,16 +301,16 @@ class _ForgotDialogState extends ConsumerState<_ForgotDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: const Text('Rejesha Nenosiri'),
+      title: const Text('Reset password'),
       content: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('Weka barua pepe yako na tutakutumia maelekezo.'),
+          const Text('Enter your email and we\'ll send you reset instructions.'),
           Gap.md,
           TextField(
             controller: _email,
-            decoration: const InputDecoration(hintText: 'barua pepe'),
+            decoration: const InputDecoration(hintText: 'Email address'),
           ),
           if (_message != null) ...[
             Gap.sm,
@@ -395,7 +322,7 @@ class _ForgotDialogState extends ConsumerState<_ForgotDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: const Text('Funga'),
+          child: const Text('Close'),
         ),
         FilledButton(
           onPressed: _busy
@@ -406,15 +333,15 @@ class _ForgotDialogState extends ConsumerState<_ForgotDialog> {
                     await ref
                         .read(authControllerProvider.notifier)
                         .sendPasswordReset(_email.text.trim());
-                    setState(() => _message =
-                        'Kama akaunti ipo, maelekezo yametumwa.');
+                    setState(() =>
+                        _message = 'If that account exists, instructions were sent.');
                   } catch (_) {
-                    setState(() => _message = 'Imeshindikana. Jaribu tena.');
+                    setState(() => _message = 'Something went wrong. Please try again.');
                   } finally {
                     if (mounted) setState(() => _busy = false);
                   }
                 },
-          child: const Text('Tuma'),
+          child: const Text('Send'),
         ),
       ],
     );

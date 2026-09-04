@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+  <rect width="512" height="512" fill="#ffffff"/>
+  <!-- Monochrome navy version for small sizes, single-ink print, or compact UI contexts -->
+  <g transform="translate(64, 64)">
+    <path d="M 192 48 C 96 48 24 116 24 204 C 24 254 48 298 88 326 C 96 332 98 344 94 354 L 78 392 C 74 402 84 412 94 408 L 148 386 C 158 382 170 384 178 390 C 206 400 236 404 268 400 C 254 380 248 356 252 332 C 254 322 262 312 272 312 C 284 312 292 322 290 334 C 286 358 296 376 312 390 C 342 368 360 334 360 296 C 360 208 288 48 192 48 Z" fill="none" stroke="#1B2A6B" stroke-width="30" stroke-linecap="round" stroke-linejoin="round"/>
+
+    <!-- Seamless continuous checkmark in solid navy -->
+    <path d="M 112 210 L 168 266 C 174 272 184 272 190 266 L 314 128" fill="none" stroke="#1B2A6B" stroke-width="30" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="314" cy="128" r="15" fill="#1B2A6B"/>
+  </g>
+</svg>

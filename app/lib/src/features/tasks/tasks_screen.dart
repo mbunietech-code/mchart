@@ -38,16 +38,16 @@ class TasksScreen extends ConsumerWidget {
         Padding(
           padding: const EdgeInsets.fromLTRB(28, 22, 28, 12),
           child: PageHeader(
-            breadcrumb: 'MbuniTech • Usimamizi wa Kazi',
-            title: 'Ubao wa Kazi (Task Board)',
+            breadcrumb: 'MbuniTech • Task Management',
+            title: 'Task Board',
             subtitle:
-                'Fuatilia kila kazi tangu kupewa hadi kuidhinishwa — pamoja na vipaumbele, tarehe za mwisho na viambatisho.',
+                'Track every task from assignment to approval — with priority, deadlines and attachments.',
             actions: [
               SizedBox(
                 width: 240,
                 child: TextField(
                   decoration: const InputDecoration(
-                    hintText: 'Tafuta kazi...',
+                    hintText: 'Search tasks...',
                     prefixIcon: Icon(Icons.search_rounded, size: 18),
                   ),
                   onChanged: (v) => ref.read(taskFilterProvider.notifier).state =
@@ -55,7 +55,7 @@ class TasksScreen extends ConsumerWidget {
                 ),
               ),
               _ToggleChip(
-                label: 'Zilizochelewa',
+                label: 'Overdue',
                 active: filter.overdue,
                 onTap: () => ref.read(taskFilterProvider.notifier).state =
                     filter.copyWith(overdue: !filter.overdue),
@@ -64,7 +64,7 @@ class TasksScreen extends ConsumerWidget {
                 FilledButton.icon(
                   onPressed: () => showTaskForm(context, ref),
                   icon: const Icon(Icons.add_rounded, size: 18),
-                  label: const Text('Kazi Mpya'),
+                  label: const Text('New Task'),
                 ),
             ],
           ),
@@ -80,8 +80,8 @@ class TasksScreen extends ConsumerWidget {
               if (tasks.isEmpty) {
                 return const EmptyState(
                   icon: Icons.checklist_rounded,
-                  title: 'Hakuna kazi bado',
-                  message: 'Kazi mpya zitakapoongezwa zitaonekana hapa.',
+                  title: 'No tasks yet',
+                  message: 'New tasks will appear here once they\'re created.',
                 );
               }
               return RefreshIndicator(
@@ -168,7 +168,7 @@ class _Column extends StatelessWidget {
                 border: Border.all(color: AppColor.border, style: BorderStyle.solid),
                 color: AppColor.surfaceMuted,
               ),
-              child: Text('Hakuna',
+              child: Text('None',
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppColor.textMuted)),
             )
           else
@@ -226,7 +226,7 @@ class _TaskCard extends StatelessWidget {
                 AppAvatar.forUser(task.assignee!, size: 22),
               Gap.sm,
               Expanded(
-                child: Text(task.assignee?.name ?? 'Haijapangwa',
+                child: Text(task.assignee?.name ?? 'Unassigned',
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(fontSize: 11.5)),

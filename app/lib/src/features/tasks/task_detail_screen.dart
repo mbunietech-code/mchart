@@ -104,7 +104,7 @@ class _MainColumn extends ConsumerWidget {
                       background: task.priority.color.withValues(alpha: 0.12)),
                   const Spacer(),
                   if (task.isOverdue)
-                    StatusPill.danger('Imechelewa', icon: Icons.warning_amber_rounded),
+                    StatusPill.danger('Overdue', icon: Icons.warning_amber_rounded),
                 ],
               ),
               Gap.md,
@@ -121,7 +121,7 @@ class _MainColumn extends ConsumerWidget {
         Gap.lg,
         if (task.attachments.isNotEmpty) ...[
           SectionCard(
-            title: 'Viambatisho',
+            title: 'Attachments',
             child: Column(
               children: [
                 for (final a in task.attachments)
@@ -135,7 +135,7 @@ class _MainColumn extends ConsumerWidget {
                               : Icons.insert_drive_file_outlined,
                       color: AppColor.textSecondary,
                     ),
-                    title: Text(a.fileName ?? 'kiambatisho',
+                    title: Text(a.fileName ?? 'Attachment',
                         style: Theme.of(context).textTheme.bodyMedium
                             ?.copyWith(color: AppColor.textPrimary)),
                     subtitle: Text(
@@ -295,34 +295,34 @@ class _WorkflowBarState extends ConsumerState<_WorkflowBar> {
         FilledButton.icon(
           onPressed: _busy ? null : () => _run('start'),
           icon: const Icon(Icons.play_arrow_rounded, size: 18),
-          label: const Text('Anza Kazi'),
+          label: const Text('Start Task'),
         ),
       if (isAssignee && allowed.contains('completed'))
         FilledButton.icon(
           onPressed: _busy ? null : () => _run('complete'),
           icon: const Icon(Icons.check_rounded, size: 18),
-          label: const Text('Weka Imekamilika'),
+          label: const Text('Mark Completed'),
         ),
       if (canReview && allowed.contains('approved'))
         FilledButton.icon(
           onPressed: _busy ? null : () => _run('approve'),
           style: FilledButton.styleFrom(backgroundColor: AppColor.success),
           icon: const Icon(Icons.verified_rounded, size: 18),
-          label: const Text('Idhinisha'),
+          label: const Text('Approve'),
         ),
       if (canReview && allowed.contains('revision'))
         OutlinedButton.icon(
           onPressed: _busy ? null : _returnForRevision,
           icon: const Icon(Icons.replay_rounded, size: 18),
-          label: const Text('Rudisha kwa Marekebisho'),
+          label: const Text('Return for Revision'),
         ),
     ];
 
     if (buttons.isEmpty) {
       return Text(
         task.status == TaskStatus.approved
-            ? 'Kazi hii imeidhinishwa na imekamilika.'
-            : 'Hakuna hatua inayohitajika kutoka kwako kwa sasa.',
+            ? 'This task has been approved and completed.'
+            : 'No action is needed from you right now.',
         style: Theme.of(context).textTheme.bodySmall,
       );
     }
@@ -335,20 +335,20 @@ class _WorkflowBarState extends ConsumerState<_WorkflowBar> {
     return showDialog<String>(
       context: context,
       builder: (_) => AlertDialog(
-        title: const Text('Sababu ya kurudisha'),
+        title: const Text('Reason for returning'),
         content: TextField(
           controller: controller,
           maxLines: 3,
           autofocus: true,
           decoration: const InputDecoration(
-            hintText: 'Eleza kinachohitaji kurekebishwa...',
+            hintText: 'Explain what needs to be fixed...',
           ),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Ghairi')),
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
           FilledButton(
             onPressed: () => Navigator.pop(context, controller.text),
-            child: const Text('Rudisha'),
+            child: const Text('Return'),
           ),
         ],
       ),
@@ -392,8 +392,8 @@ class _CommentsState extends ConsumerState<_Comments> {
   Widget build(BuildContext context) {
     final comments = widget.task.comments;
     return SectionCard(
-      title: 'Mazungumzo ya Kazi',
-      subtitle: '${comments.length} maoni',
+      title: 'Task Discussion',
+      subtitle: '${comments.length} comments',
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -402,7 +402,7 @@ class _CommentsState extends ConsumerState<_Comments> {
               padding: EdgeInsets.symmetric(vertical: 16),
               child: EmptyState(
                 icon: Icons.forum_outlined,
-                title: 'Hakuna maoni bado',
+                title: 'No comments yet',
               ),
             )
           else
@@ -418,7 +418,7 @@ class _CommentsState extends ConsumerState<_Comments> {
                   controller: _controller,
                   minLines: 1,
                   maxLines: 4,
-                  decoration: const InputDecoration(hintText: 'Andika maoni...'),
+                  decoration: const InputDecoration(hintText: 'Write a comment...'),
                   onSubmitted: (_) => _send(),
                 ),
               ),
@@ -464,11 +464,11 @@ class _CommentTile extends StatelessWidget {
               children: [
                 Row(
                   children: [
-                    Text(comment.user?.name ?? 'Mtumiaji',
+                    Text(comment.user?.name ?? 'User',
                         style: Theme.of(context).textTheme.titleSmall),
                     if (comment.isRevisionNote) ...[
                       Gap.sm,
-                      StatusPill.warning('Marekebisho'),
+                      StatusPill.warning('Revision'),
                     ],
                     const Spacer(),
                     Text(Fmt.relative(comment.createdAt),
@@ -506,7 +506,7 @@ class _SideColumn extends ConsumerWidget {
             children: [
               Row(
                 children: [
-                  Expanded(child: Text('Maelezo', style: Theme.of(context).textTheme.titleMedium)),
+                  Expanded(child: Text('Details', style: Theme.of(context).textTheme.titleMedium)),
                   if (canEdit)
                     IconButton(
                       icon: const Icon(Icons.edit_outlined, size: 18),
@@ -515,17 +515,17 @@ class _SideColumn extends ConsumerWidget {
                 ],
               ),
               Gap.sm,
-              _MetaRow(label: 'Mpewe', child: _person(context, task.assignee)),
-              _MetaRow(label: 'Aliyeunda', child: _person(context, task.creator)),
+              _MetaRow(label: 'Assignee', child: _person(context, task.assignee)),
+              _MetaRow(label: 'Created by', child: _person(context, task.creator)),
               _MetaRow(
-                label: 'Tarehe ya mwisho',
+                label: 'Deadline',
                 child: Text(Fmt.deadline(task.deadline),
                     style: TextStyle(
                         color: task.isOverdue ? AppColor.danger : AppColor.textPrimary,
                         fontWeight: FontWeight.w600)),
               ),
               _MetaRow(
-                label: 'Imeundwa',
+                label: 'Created',
                 child: Text(Fmt.relative(task.createdAt)),
               ),
             ],
@@ -533,9 +533,9 @@ class _SideColumn extends ConsumerWidget {
         ),
         Gap.lg,
         SectionCard(
-          title: 'Historia ya Hali',
+          title: 'Status History',
           child: task.statusHistory.isEmpty
-              ? const Text('Hakuna mabadiliko bado.')
+              ? const Text('No changes yet.')
               : Column(
                   children: [
                     for (final e in task.statusHistory) _HistoryTile(event: e),
@@ -609,11 +609,11 @@ class _HistoryTile extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  '${event.oldStatus == null ? 'Imeundwa' : TaskStatus.from(event.oldStatus).label} → ${to.label}',
+                  '${event.oldStatus == null ? 'Created' : TaskStatus.from(event.oldStatus).label} → ${to.label}',
                   style: Theme.of(context).textTheme.titleSmall,
                 ),
                 Text(
-                  '${event.changedBy?.name ?? 'Mfumo'} · ${Fmt.relative(event.changedAt)}',
+                  '${event.changedBy?.name ?? 'System'} · ${Fmt.relative(event.changedAt)}',
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(fontSize: 11),
                 ),
                 if (event.note != null && event.note!.isNotEmpty)

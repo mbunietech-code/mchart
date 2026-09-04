@@ -61,14 +61,14 @@ class _Panel extends ConsumerWidget {
               padding: const EdgeInsets.fromLTRB(16, 14, 12, 12),
               child: Row(
                 children: [
-                  Text('Arifa', style: Theme.of(context).textTheme.titleLarge),
+                  Text('Notifications', style: Theme.of(context).textTheme.titleLarge),
                   Gap.sm,
                   if (state.unread > 0)
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
                       decoration: BoxDecoration(
                           color: AppColor.danger, borderRadius: BorderRadius.circular(999)),
-                      child: Text('${state.unread} Mpya',
+                      child: Text('${state.unread} New',
                           style: const TextStyle(
                               color: Colors.white, fontSize: 11, fontWeight: FontWeight.w700)),
                     ),
@@ -80,7 +80,7 @@ class _Panel extends ConsumerWidget {
                       minimumSize: const Size(0, 0),
                       tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                     ),
-                    child: const Text('Weka zote zimesomwa'),
+                    child: const Text('Mark all as read'),
                   ),
                 ],
               ),
@@ -94,7 +94,7 @@ class _Panel extends ConsumerWidget {
                           height: 220,
                           child: EmptyState(
                             icon: Icons.notifications_none_rounded,
-                            title: 'Hakuna arifa',
+                            title: 'No notifications',
                           ),
                         )
                       : ListView(
@@ -102,12 +102,12 @@ class _Panel extends ConsumerWidget {
                           padding: const EdgeInsets.symmetric(vertical: 6),
                           children: [
                             if (today.isNotEmpty) ...[
-                              const _GroupLabel('Leo'),
+                              const _GroupLabel('Today'),
                               for (final n in today)
                                 _NotificationRow(notification: n, controller: controller),
                             ],
                             if (earlier.isNotEmpty) ...[
-                              const _GroupLabel('Zilizopita'),
+                              const _GroupLabel('Earlier'),
                               for (final n in earlier)
                                 _NotificationRow(notification: n, controller: controller),
                             ],
@@ -120,7 +120,7 @@ class _Panel extends ConsumerWidget {
               child: const Padding(
                 padding: EdgeInsets.symmetric(vertical: 12),
                 child: Center(
-                  child: Text('Funga',
+                  child: Text('Close',
                       style: TextStyle(
                           fontSize: 12, fontWeight: FontWeight.w600, color: AppColor.brand)),
                 ),

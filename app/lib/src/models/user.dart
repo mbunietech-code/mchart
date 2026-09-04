@@ -42,6 +42,8 @@ class User {
   bool get isActive => status == 'active';
   bool get isOnline =>
       lastSeenAt != null && DateTime.now().difference(lastSeenAt!).inMinutes < 3;
+  bool get isAdmin => role == UserRole.admin;
+  bool get isManagerOrAdmin => role.isManagerOrAdmin;
 
   String get initials {
     final parts = name.trim().split(RegExp(r'\s+')).where((p) => p.isNotEmpty).toList();

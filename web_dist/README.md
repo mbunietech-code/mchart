@@ -8,9 +8,11 @@ cd app
 flutter build web --release --no-web-resources-cdn \
   --dart-define=MCHART_API=https://chart.mbuniehub.com \
   --dart-define=MCHART_REALTIME=off
-rm -rf ../web_dist
-mkdir ../web_dist
-cp -r build/web/. ../web_dist/
+cd build/web/canvaskit && rm -rf chromium experimental_webparagraph skwasm* wimp* *.symbols
+cd ../ && rm -f flutter_service_worker.js .last_build_id
+rm -rf ../../../web_dist
+mkdir ../../../web_dist
+cp -r . ../../../web_dist/
 # re-add web_dist/.htaccess (SPA fallback — see git history) if it was wiped
 ```
 

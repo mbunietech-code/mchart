@@ -1,67 +1,29 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 import '../theme/app_color.dart';
+import '../theme/app_spacing.dart';
 
-/// The MChart mark: rounded blue square with a white "M" and a status dot.
+/// The MChart mark — a rounded white tile bordered in the design system's
+/// subtle border color, containing the navy checkmark glyph.
 class MChartLogo extends StatelessWidget {
-  const MChartLogo({super.key, this.size = 34, this.showDot = true});
+  const MChartLogo({super.key, this.size = 34, this.bordered = true});
 
   final double size;
-  final bool showDot;
+  final bool bordered;
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
+    return Container(
       width: size,
       height: size,
-      child: Stack(
-        clipBehavior: Clip.none,
-        children: [
-          Container(
-            width: size,
-            height: size,
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [AppColor.brand, AppColor.navy],
-              ),
-              borderRadius: BorderRadius.circular(size * 0.28),
-              boxShadow: [
-                BoxShadow(
-                  color: AppColor.brand.withValues(alpha: 0.35),
-                  blurRadius: 8,
-                  offset: const Offset(0, 3),
-                ),
-              ],
-            ),
-            alignment: Alignment.center,
-            child: Text(
-              'M',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: size * 0.56,
-                fontWeight: FontWeight.w800,
-                height: 1,
-              ),
-            ),
-          ),
-          if (showDot)
-            Positioned(
-              right: -2,
-              top: -2,
-              child: Container(
-                width: size * 0.26,
-                height: size * 0.26,
-                decoration: BoxDecoration(
-                  color: AppColor.warning,
-                  shape: BoxShape.circle,
-                  border: Border.all(color: Colors.white, width: 1.5),
-                ),
-              ),
-            ),
-        ],
+      padding: EdgeInsets.all(size * 0.08),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(size * 0.28),
+        border: bordered ? Border.all(color: AppColor.border) : null,
       ),
+      child: SvgPicture.asset('assets/branding/mchart_mark.svg'),
     );
   }
 }

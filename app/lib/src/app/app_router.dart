@@ -9,6 +9,7 @@ import '../features/dashboard/dashboard_screen.dart';
 import '../features/settings/settings_screen.dart';
 import '../features/tasks/task_detail_screen.dart';
 import '../features/tasks/tasks_screen.dart';
+import '../models/enums.dart';
 import 'app_shell.dart';
 
 /// Bridges the Riverpod auth state to a Listenable go_router can refresh on.
@@ -27,17 +28,25 @@ final routerProvider = Provider<GoRouter>((ref) {
 
   return GoRouter(
     navigatorKey: _rootKey,
-    initialLocation: '/dashboard',
+    initialLocation: '/tasks',
     refreshListenable: refresh,
     redirect: (context, state) {
       final auth = ref.read(authControllerProvider);
       final loggingIn = state.matchedLocation == '/login';
 
       if (auth is AuthUnknown || auth is AuthLoading) return null;
-      final authed = auth is Authenticated;
 
-      if (!authed) return loggingIn ? null : '/login';
-      if (authed && loggingIn) return '/dashboard';
+      if (auth is! Authenticated) return loggingIn ? null : '/login';
+      if (loggingIn) return '/tasks';
+
+      // Route by role: Dashboard is manager/admin, Settings is admin-only —
+      // one login for everyone, but where it lands (and what a typed URL
+      // resolves to) depends on the account's role.
+      final role = auth.user.role;
+      final path = state.matchedLocation;
+      if (path.startsWith('/dashboard') && !role.isManagerOrAdmin) return '/tasks';
+      if (path.startsWith('/settings') && role != UserRole.admin) return '/tasks';
+
       return null;
     },
     routes: [

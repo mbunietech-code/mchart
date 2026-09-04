@@ -124,9 +124,7 @@ class _Sidebar extends ConsumerWidget {
             icon: Icons.forum_outlined,
             label: 'Chats',
             active: location.startsWith('/chats'),
-            trailing: channelUnread > 0
-                ? CountBadge(channelUnread)
-                : const _MiniTag('#prog'),
+            trailing: channelUnread > 0 ? CountBadge(channelUnread) : null,
             onTap: () => context.go('/chats'),
           ),
           _NavItem(
@@ -135,12 +133,14 @@ class _Sidebar extends ConsumerWidget {
             active: location.startsWith('/tasks'),
             onTap: () => context.go('/tasks'),
           ),
-          _NavItem(
-            icon: Icons.space_dashboard_outlined,
-            label: 'Dashboard',
-            active: location.startsWith('/dashboard'),
-            onTap: () => context.go('/dashboard'),
-          ),
+          // Manager/Admin only — staff have no team-wide view to look at.
+          if (user.role.isManagerOrAdmin)
+            _NavItem(
+              icon: Icons.space_dashboard_outlined,
+              label: 'Dashboard',
+              active: location.startsWith('/dashboard'),
+              onTap: () => context.go('/dashboard'),
+            ),
           const Padding(
             padding: EdgeInsets.symmetric(horizontal: 16, vertical: 10),
             child: Divider(height: 1),
@@ -163,12 +163,14 @@ class _Sidebar extends ConsumerWidget {
               bell?._openNotifications();
             },
           ),
-          _NavItem(
-            icon: Icons.settings_outlined,
-            label: 'Settings',
-            active: location.startsWith('/settings'),
-            onTap: () => context.go('/settings'),
-          ),
+          // Admin only — user/department/role administration.
+          if (user.isAdmin)
+            _NavItem(
+              icon: Icons.settings_outlined,
+              label: 'Settings',
+              active: location.startsWith('/settings'),
+              onTap: () => context.go('/settings'),
+            ),
           const Spacer(),
           const Divider(height: 1),
           _UserCard(user: user),
@@ -229,23 +231,6 @@ class _NavItem extends StatelessWidget {
       ),
     );
   }
-}
-
-class _MiniTag extends StatelessWidget {
-  const _MiniTag(this.text);
-  final String text;
-
-  @override
-  Widget build(BuildContext context) => Container(
-        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-        decoration: BoxDecoration(
-            color: AppColor.brandSoft, borderRadius: BorderRadius.circular(6)),
-        child: Text(text,
-            style: const TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.w600,
-                color: AppColor.brand)),
-      );
 }
 
 class _UserCard extends ConsumerWidget {

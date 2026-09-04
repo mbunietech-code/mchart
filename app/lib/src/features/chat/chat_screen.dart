@@ -126,9 +126,9 @@ class _ListPane extends ConsumerWidget {
               children: [
                 Expanded(
                   child: conversations.maybeWhen(
-                    data: (list) => Text('MAZUNGUMZO YOTE ${list.length}',
+                    data: (list) => Text('ALL CHATS ${list.length}',
                         style: Theme.of(context).textTheme.labelSmall),
-                    orElse: () => Text('MAZUNGUMZO',
+                    orElse: () => Text('CHATS',
                         style: Theme.of(context).textTheme.labelSmall),
                   ),
                 ),
@@ -162,7 +162,7 @@ class _ListPane extends ConsumerWidget {
                 if (filtered.isEmpty) {
                   return const EmptyState(
                     icon: Icons.forum_outlined,
-                    title: 'Hakuna mazungumzo',
+                    title: 'No conversations',
                   );
                 }
 
@@ -170,7 +170,7 @@ class _ListPane extends ConsumerWidget {
                   padding: const EdgeInsets.only(bottom: 8),
                   children: [
                     if (channels.isNotEmpty) ...[
-                      const _SectionLabel('Idara na Channels'),
+                      const _SectionLabel('Departments & Channels'),
                       for (final c in channels)
                         _ConversationRow(
                           conversation: c,
@@ -180,7 +180,7 @@ class _ListPane extends ConsumerWidget {
                         ),
                     ],
                     if (dms.isNotEmpty) ...[
-                      const _SectionLabel('Jumbe za Faragha · DMs'),
+                      const _SectionLabel('Direct Messages'),
                       for (final c in dms)
                         _ConversationRow(
                           conversation: c,
@@ -249,7 +249,7 @@ class _ConversationRow extends StatelessWidget {
     final other = conversation.otherParticipant(currentUserId);
     final title = conversation.titleFor(currentUserId);
     final preview = conversation.latestMessage?.body ??
-        (conversation.latestMessage != null ? '[kiambatisho]' : 'Hakuna ujumbe bado');
+        (conversation.latestMessage != null ? '[attachment]' : 'No messages yet');
 
     return InkWell(
       onTap: onTap,
@@ -328,8 +328,8 @@ class _NoSelection extends StatelessWidget {
         color: AppColor.canvas,
         child: const EmptyState(
           icon: Icons.forum_outlined,
-          title: 'Chagua mazungumzo',
-          message: 'Teua channel au mtu upande wa kushoto kuanza kuandika.',
+          title: 'Select a conversation',
+          message: 'Pick a channel or person on the left to start chatting.',
         ),
       );
 }
@@ -388,8 +388,8 @@ class _ThreadPaneState extends ConsumerState<_ThreadPane> {
                 : state.messages.isEmpty
                     ? const EmptyState(
                         icon: Icons.waving_hand_outlined,
-                        title: 'Anza mazungumzo',
-                        message: 'Tuma ujumbe wa kwanza hapa.',
+                        title: 'Start the conversation',
+                        message: 'Send the first message here.',
                       )
                     : ListView.builder(
                         controller: _scroll,
@@ -472,10 +472,10 @@ class _ThreadHeader extends StatelessWidget {
                 ),
                 Text(
                   isChannel
-                      ? 'Wanachama ${conversation?.participants.length ?? 0}'
+                      ? '${conversation?.participants.length ?? 0} members'
                       : (other?.isOnline ?? false)
-                          ? 'yupo mtandaoni'
-                          : 'nje ya mtandao',
+                          ? 'online'
+                          : 'offline',
                   overflow: TextOverflow.ellipsis,
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(fontSize: 11),
                 ),
@@ -728,7 +728,7 @@ class _Composer extends StatelessWidget {
                   textInputAction: TextInputAction.send,
                   onSubmitted: (_) => onSend(),
                   decoration: const InputDecoration(
-                    hintText: 'Andika ujumbe...',
+                    hintText: 'Type a message...',
                     fillColor: AppColor.surfaceMuted,
                   ),
                 ),
@@ -749,7 +749,7 @@ class _Composer extends StatelessWidget {
             padding: const EdgeInsets.only(top: 4),
             child: Row(
               children: [
-                Text('Enter kutuma · Shift + Enter mstari mpya',
+                Text('Enter to send · Shift + Enter for a new line',
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(fontSize: 10.5)),
                 const Spacer(),
                 Text('Reverb E2E',

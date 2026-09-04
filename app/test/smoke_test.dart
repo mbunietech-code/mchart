@@ -18,9 +18,9 @@ void main() {
         child: MaterialApp(theme: AppTheme.light(), home: const LoginScreen()),
       ),
     );
-    expect(find.text('Barua Pepe'), findsOneWidget);
-    expect(find.text('Nenosiri'), findsOneWidget);
-    expect(find.widgetWithText(FilledButton, 'Ingia Kazini'), findsOneWidget);
+    expect(find.text('Email'), findsOneWidget);
+    expect(find.text('Password'), findsOneWidget);
+    expect(find.widgetWithText(FilledButton, 'Sign in'), findsOneWidget);
   });
 
   testWidgets('core widgets render', (tester) async {
