@@ -56,11 +56,23 @@
   </div>
 
   <script>
-    // Flutter dispatches this on window once the first frame has painted —
-    // that's our cue to drop the HTML boot screen and reveal the real app.
-    window.addEventListener('flutter-first-frame', () => {
+    // Drop the HTML boot screen once the real app has painted. Three
+    // independent signals, first one wins, so a slow/missing event never
+    // leaves the boot screen covering the app forever:
+    //   1. Flutter's own 'flutter-first-frame' event (the intended signal).
+    //   2. A <canvas> actually appearing in the DOM (what first paint means).
+    //   3. A hard timeout, as an absolute last resort.
+    let hidden = false;
+    function hideBoot() {
+      if (hidden) return;
+      hidden = true;
       document.getElementById('mchart-boot')?.remove();
-    });
+    }
+    window.addEventListener('flutter-first-frame', hideBoot);
+    new MutationObserver((_, obs) => {
+      if (document.querySelector('canvas')) { hideBoot(); obs.disconnect(); }
+    }).observe(document.documentElement, { childList: true, subtree: true });
+    setTimeout(hideBoot, 15000);
   </script>
   <script>
     // Some hardened browsers (this app's own dev sandbox included) block the
