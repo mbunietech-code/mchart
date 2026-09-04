@@ -1,5 +1,15 @@
-# MChart Flutter web client — SPA fallback so deep links (e.g. /tasks/5) and
-# page refreshes resolve to index.html instead of a 404.
+# MChart Flutter web client
+
+# Hostinger/LiteSpeed serves .wasm as text/plain by default. The browser's
+# WebAssembly.compileStreaming (used by CanvasKit) requires the response's
+# Content-Type to be exactly application/wasm and rejects otherwise — without
+# this, the app fails to start on every browser regardless of anything else.
+<IfModule mod_mime.c>
+  AddType application/wasm .wasm
+</IfModule>
+
+# SPA fallback so deep links (e.g. /tasks/5) and page refreshes resolve to
+# index.html instead of a 404.
 <IfModule mod_rewrite.c>
   RewriteEngine On
   RewriteBase /
@@ -12,9 +22,6 @@
 # be revalidated — each deploy replaces them in place (no content hash in the
 # filename), so a long-lived cache (e.g. Cloudflare's proxy cache, which
 # otherwise defaults to 7 days for .js) would keep serving a stale build.
-# The service worker (flutter_service_worker.js) does its own versioned
-# precaching of every asset for fast repeat visits, so this is only a
-# fallback for browsers/requests that bypass it.
 <IfModule mod_headers.c>
   <FilesMatch "\.(html|js)$">
     Header set Cache-Control "no-cache, must-revalidate"
