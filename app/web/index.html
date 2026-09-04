@@ -13,30 +13,80 @@
   <link rel="apple-touch-icon" href="icons/Icon-192.png">
   <link rel="icon" type="image/png" href="favicon.png"/>
 
+  <!-- Warm up the two biggest downloads as early as possible, in parallel. -->
+  <link rel="preload" href="main.dart.js" as="script">
+  <link rel="preload" href="canvaskit/canvaskit.wasm" as="fetch" type="application/wasm" crossorigin>
+
   <title>MChart</title>
   <link rel="manifest" href="manifest.json">
+
+  <style>
+    /* Visible immediately, before any Dart/Flutter code runs, so a slow
+       connection shows "loading" rather than a blank white page. */
+    #mchart-boot {
+      position: fixed; inset: 0; display: flex; align-items: center;
+      justify-content: center; flex-direction: column; gap: 12px;
+      background: #F8FAFC; font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+    }
+    #mchart-boot .mark {
+      width: 56px; height: 56px; border-radius: 16px; background: #fff;
+      border: 1px solid #E2E8F0; display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 1px 2px rgba(15,23,42,0.06);
+    }
+    #mchart-boot .spinner {
+      width: 20px; height: 20px; border-radius: 999px;
+      border: 2.5px solid #DBE3F0; border-top-color: #1E40AF;
+      animation: mchart-spin 0.8s linear infinite;
+    }
+    @keyframes mchart-spin { to { transform: rotate(360deg); } }
+  </style>
 </head>
 <body>
-  <script type="module">
-    // Some hardened browsers block Flutter's engine from importing the CanvasKit
-    // ES module (Trusted Types). Preload it and hand the ready instance to the
-    // engine so it skips its own loader.
-    (async () => {
-      const base = document.querySelector('base')?.getAttribute('href') || '/';
-      try {
-        const ck = await import(base + 'canvaskit/canvaskit.js');
-        window.flutterCanvasKit = await ck.default({
-          locateFile: (file) => base + 'canvaskit/' + file,
-        });
-      } catch (e) {
-        console.warn('CanvasKit preload skipped:', e);
-      } finally {
-        const s = document.createElement('script');
-        s.src = base + 'flutter_bootstrap.js';
-        s.async = true;
-        document.body.appendChild(s);
-      }
-    })();
+  <div id="mchart-boot">
+    <div class="mark">
+      <svg width="30" height="30" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+        <g transform="translate(64, 64)">
+          <path d="M 192 48 C 96 48 24 116 24 204 C 24 254 48 298 88 326 C 96 332 98 344 94 354 L 78 392 C 74 402 84 412 94 408 L 148 386 C 158 382 170 384 178 390 C 206 400 236 404 268 400 C 254 380 248 356 252 332 C 254 322 262 312 272 312 C 284 312 292 322 290 334 C 286 358 296 376 312 390 C 342 368 360 334 360 296 C 360 208 288 48 192 48 Z" fill="none" stroke="#1B2A6B" stroke-width="30" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M 112 210 L 168 266 C 174 272 184 272 190 266 L 314 128" fill="none" stroke="#1B2A6B" stroke-width="30" stroke-linecap="round" stroke-linejoin="round"/>
+          <circle cx="314" cy="128" r="15" fill="#1B2A6B"/>
+        </g>
+      </svg>
+    </div>
+    <div class="spinner"></div>
+  </div>
+
+  <script>
+    // Flutter dispatches this on window once the first frame has painted —
+    // that's our cue to drop the HTML boot screen and reveal the real app.
+    window.addEventListener('flutter-first-frame', () => {
+      document.getElementById('mchart-boot')?.remove();
+    });
+  </script>
+  <script>
+    // Some hardened browsers (this app's own dev sandbox included) block the
+    // Flutter engine's own CanvasKit module loader (Trusted Types). Only pay
+    // the cost of a manual, serialized preload there — append ?ckpreload=1.
+    // Everyone else gets Flutter's normal, fully-parallel bootstrap.
+    if (new URLSearchParams(location.search).has('ckpreload')) {
+      (async () => {
+        const base = document.querySelector('base')?.getAttribute('href') || '/';
+        try {
+          const ck = await import(base + 'canvaskit/canvaskit.js');
+          window.flutterCanvasKit = await ck.default({
+            locateFile: (file) => base + 'canvaskit/' + file,
+          });
+        } catch (e) {
+          console.warn('CanvasKit preload skipped:', e);
+        } finally {
+          const s = document.createElement('script');
+          s.src = base + 'flutter_bootstrap.js';
+          s.async = true;
+          document.body.appendChild(s);
+        }
+      })();
+    } else {
+      document.write('<script src="flutter_bootstrap.js" async><' + '/script>');
+    }
   </script>
 </body>
 </html>

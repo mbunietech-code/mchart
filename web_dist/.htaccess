@@ -8,11 +8,13 @@
   RewriteRule . /index.html [L]
 </IfModule>
 
-# Cache policy: index.html and the compiled app must always be revalidated —
-# each deploy replaces main.dart.js in place (no content hash in the
+# Cache policy: index.html, flutter_bootstrap.js and main.dart.js must always
+# be revalidated — each deploy replaces them in place (no content hash in the
 # filename), so a long-lived cache (e.g. Cloudflare's proxy cache, which
 # otherwise defaults to 7 days for .js) would keep serving a stale build.
-# Static, rarely-changing assets (fonts, icons, CanvasKit) are fine to cache.
+# The service worker (flutter_service_worker.js) does its own versioned
+# precaching of every asset for fast repeat visits, so this is only a
+# fallback for browsers/requests that bypass it.
 <IfModule mod_headers.c>
   <FilesMatch "\.(html|js)$">
     Header set Cache-Control "no-cache, must-revalidate"

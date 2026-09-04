@@ -9,7 +9,7 @@ flutter build web --release --no-web-resources-cdn \
   --dart-define=MCHART_API=https://chart.mbuniehub.com \
   --dart-define=MCHART_REALTIME=off
 cd build/web/canvaskit && rm -rf chromium experimental_webparagraph skwasm* wimp* *.symbols
-cd ../ && rm -f flutter_service_worker.js .last_build_id
+cd ../ && rm -f .last_build_id
 rm -rf ../../../web_dist
 mkdir ../../../web_dist
 cp -r . ../../../web_dist/
@@ -21,10 +21,23 @@ shared hosting) — see `docs/DEPLOYMENT.md` §8.
 
 Committed instead of built on the server because Hostinger shared hosting has
 no Flutter SDK. Unused CanvasKit renderer variants (skwasm, chromium,
-debug `.symbols`) are stripped to keep this under ~12 MB.
+debug `.symbols`) are stripped; `flutter_service_worker.js` is kept — it
+precaches every asset (versioned per build) so repeat visits load instantly
+from the browser's own cache instead of the network.
 
 Serve as a static site — any subdomain/folder docroot pointed at this
 directory works, no PHP required. `.htaccess` sends `no-cache` for
-`index.html`/`main.dart.js` so Cloudflare (or the browser) never serves a
-stale build after a redeploy — **purge the Cloudflare cache once** after
-pushing a new build, since the previous copy may already be edge-cached.
+`index.html`/`*.js` so Cloudflare (or the browser) never serves a stale
+build after a redeploy — **purge the Cloudflare cache once** after pushing a
+new build, since the previous copy may already be edge-cached.
+
+## Load performance
+
+- `index.html` preloads `main.dart.js` and `canvaskit.wasm` in parallel and
+  shows an inline boot screen (the MChart mark + spinner) until Flutter's
+  `flutter-first-frame` event fires, so a slow connection shows visible
+  progress instead of a blank page.
+- The CanvasKit-preload workaround for browsers that block Flutter's own
+  module loader (Trusted Types) is **off by default** — it serializes two
+  large downloads and roughly doubles load time, so only enable it for
+  testing by appending `?ckpreload=1` to the URL.

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../core/env.dart';
 import '../core/providers.dart';
 import '../features/auth/auth_controller.dart';
 import '../features/chat/chat_repository.dart';
@@ -317,9 +318,10 @@ class _TopBar extends ConsumerWidget {
           ),
           Gap.md,
           StatusPill(
-            connected ? 'Operational' : 'Reconnecting',
-            color: connected ? AppColor.success : AppColor.warning,
-            background: connected ? AppColor.successSoft : AppColor.warningSoft,
+            !Env.realtimeEnabled || connected ? 'Operational' : 'Reconnecting',
+            color: !Env.realtimeEnabled || connected ? AppColor.success : AppColor.warning,
+            background:
+                !Env.realtimeEnabled || connected ? AppColor.successSoft : AppColor.warningSoft,
             dot: true,
           ),
           const Spacer(),
