@@ -40,15 +40,19 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       // One login for everyone — the backend returns the account's role and
       // the app routes/filters every screen from that, there is no separate
       // "manager login" or "staff login".
-      await ref.read(authControllerProvider.notifier).login(
+      await ref
+          .read(authControllerProvider.notifier)
+          .login(
             email: _email.text.trim(),
             password: _password.text,
             deviceName: 'MChart Desktop',
           );
     } on ApiException catch (e) {
-      setState(() => _error = e.isValidation
-          ? (e.firstErrorFor('email') ?? e.message)
-          : e.message);
+      setState(
+        () => _error = e.isValidation
+            ? (e.firstErrorFor('email') ?? e.message)
+            : e.message,
+      );
     } catch (_) {
       setState(() => _error = 'Unable to sign in. Please try again.');
     } finally {
@@ -88,11 +92,15 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text('MChart',
-                                  style: t.titleLarge?.copyWith(fontSize: 18)),
-                              Text('MbuniTech Workspace',
-                                  overflow: TextOverflow.ellipsis,
-                                  style: t.bodySmall?.copyWith(fontSize: 11)),
+                              Text(
+                                'MChart',
+                                style: t.titleLarge?.copyWith(fontSize: 18),
+                              ),
+                              Text(
+                                'Mbunietech Workspace',
+                                overflow: TextOverflow.ellipsis,
+                                style: t.bodySmall?.copyWith(fontSize: 11),
+                              ),
                             ],
                           ),
                         ),
@@ -102,8 +110,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     Text('Sign in', style: t.titleLarge),
                     Gap.xs,
                     Text(
-                      'Sign in to the MbuniTech communication and task workspace.',
-                      style: t.bodySmall?.copyWith(color: const Color(0xFF5A6B9C)),
+                      'Sign in to the Mbunietech communication and task workspace.',
+                      style: t.bodySmall?.copyWith(
+                        color: const Color(0xFF5A6B9C),
+                      ),
                     ),
                     Gap.xl,
                     _FieldLabel('Email'),
@@ -130,7 +140,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       onFieldSubmitted: (_) => _submit(),
                       decoration: InputDecoration(
                         hintText: '••••••••••••',
-                        prefixIcon: const Icon(Icons.lock_outline_rounded, size: 18),
+                        prefixIcon: const Icon(
+                          Icons.lock_outline_rounded,
+                          size: 18,
+                        ),
                         suffixIcon: IconButton(
                           icon: Icon(
                             _obscure
@@ -141,8 +154,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           onPressed: () => setState(() => _obscure = !_obscure),
                         ),
                       ),
-                      validator: (v) =>
-                          (v == null || v.isEmpty) ? 'Enter your password' : null,
+                      validator: (v) => (v == null || v.isEmpty)
+                          ? 'Enter your password'
+                          : null,
                     ),
                     Gap.sm,
                     Row(
@@ -152,13 +166,17 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           width: 24,
                           child: Checkbox(
                             value: _remember,
-                            onChanged: (v) => setState(() => _remember = v ?? true),
+                            onChanged: (v) =>
+                                setState(() => _remember = v ?? true),
                           ),
                         ),
                         Gap.xs,
                         Flexible(
-                          child: Text('Remember me',
-                              overflow: TextOverflow.ellipsis, style: t.bodySmall),
+                          child: Text(
+                            'Remember me',
+                            overflow: TextOverflow.ellipsis,
+                            style: t.bodySmall,
+                          ),
                         ),
                         const Spacer(),
                         TextButton(
@@ -168,15 +186,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                             minimumSize: const Size(0, 0),
                             tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                           ),
-                          child: const Text('Forgot password?',
-                              overflow: TextOverflow.ellipsis),
+                          child: const Text(
+                            'Forgot password?',
+                            overflow: TextOverflow.ellipsis,
+                          ),
                         ),
                       ],
                     ),
-                    if (_error != null) ...[
-                      Gap.md,
-                      _ErrorBanner(_error!),
-                    ],
+                    if (_error != null) ...[Gap.md, _ErrorBanner(_error!)],
                     Gap.lg,
                     FilledButton(
                       onPressed: _busy ? null : _submit,
@@ -188,14 +205,18 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                               width: 18,
                               height: 18,
                               child: CircularProgressIndicator(
-                                strokeWidth: 2, color: Colors.white),
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
                             )
                           : const Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
                                 Flexible(
-                                  child: Text('Sign in',
-                                      overflow: TextOverflow.ellipsis),
+                                  child: Text(
+                                    'Sign in',
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
                                 ),
                                 SizedBox(width: 6),
                                 Icon(Icons.arrow_forward_rounded, size: 16),
@@ -210,22 +231,31 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           width: 7,
                           height: 7,
                           decoration: const BoxDecoration(
-                              color: AppColor.success, shape: BoxShape.circle),
+                            color: AppColor.success,
+                            shape: BoxShape.circle,
+                          ),
                         ),
                         Gap.xs,
                         Flexible(
-                          child: Text('All systems operational',
-                              overflow: TextOverflow.ellipsis,
-                              style: t.bodySmall?.copyWith(
-                                  fontSize: 11, color: AppColor.success)),
+                          child: Text(
+                            'All systems operational',
+                            overflow: TextOverflow.ellipsis,
+                            style: t.bodySmall?.copyWith(
+                              fontSize: 11,
+                              color: AppColor.success,
+                            ),
+                          ),
                         ),
                       ],
                     ),
                     Gap.md,
                     Text(
-                      '© 2026 MbuniTech Technologies Limited. All rights reserved.',
+                      '© 2026 Mbunietech Technologies Limited. All rights reserved.',
                       textAlign: TextAlign.center,
-                      style: t.bodySmall?.copyWith(fontSize: 10.5, color: AppColor.textMuted),
+                      style: t.bodySmall?.copyWith(
+                        fontSize: 10.5,
+                        color: AppColor.textMuted,
+                      ),
                     ),
                   ],
                 ),
@@ -238,10 +268,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   }
 
   void _showForgot(BuildContext context) {
-    showDialog<void>(
-      context: context,
-      builder: (_) => const _ForgotDialog(),
-    );
+    showDialog<void>(context: context, builder: (_) => const _ForgotDialog());
   }
 }
 
@@ -250,10 +277,13 @@ class _FieldLabel extends StatelessWidget {
   final String text;
   @override
   Widget build(BuildContext context) => Text(
-        text,
-        style: const TextStyle(
-            fontSize: 12, fontWeight: FontWeight.w600, color: AppColor.textPrimary),
-      );
+    text,
+    style: const TextStyle(
+      fontSize: 12,
+      fontWeight: FontWeight.w600,
+      color: AppColor.textPrimary,
+    ),
+  );
 }
 
 class _ErrorBanner extends StatelessWidget {
@@ -262,23 +292,29 @@ class _ErrorBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-        decoration: BoxDecoration(
-          color: AppColor.dangerSoft,
-          borderRadius: AppRadius.md,
-          border: Border.all(color: AppColor.danger.withValues(alpha: 0.3)),
+    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+    decoration: BoxDecoration(
+      color: AppColor.dangerSoft,
+      borderRadius: AppRadius.md,
+      border: Border.all(color: AppColor.danger.withValues(alpha: 0.3)),
+    ),
+    child: Row(
+      children: [
+        const Icon(
+          Icons.error_outline_rounded,
+          size: 16,
+          color: AppColor.danger,
         ),
-        child: Row(
-          children: [
-            const Icon(Icons.error_outline_rounded, size: 16, color: AppColor.danger),
-            Gap.sm,
-            Expanded(
-              child: Text(message,
-                  style: const TextStyle(fontSize: 12, color: AppColor.danger)),
-            ),
-          ],
+        Gap.sm,
+        Expanded(
+          child: Text(
+            message,
+            style: const TextStyle(fontSize: 12, color: AppColor.danger),
+          ),
         ),
-      );
+      ],
+    ),
+  );
 }
 
 class _ForgotDialog extends ConsumerStatefulWidget {
@@ -306,7 +342,9 @@ class _ForgotDialogState extends ConsumerState<_ForgotDialog> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('Enter your email and we\'ll send you reset instructions.'),
+          const Text(
+            'Enter your email and we\'ll send you reset instructions.',
+          ),
           Gap.md,
           TextField(
             controller: _email,
@@ -314,8 +352,10 @@ class _ForgotDialogState extends ConsumerState<_ForgotDialog> {
           ),
           if (_message != null) ...[
             Gap.sm,
-            Text(_message!,
-                style: const TextStyle(fontSize: 12, color: AppColor.success)),
+            Text(
+              _message!,
+              style: const TextStyle(fontSize: 12, color: AppColor.success),
+            ),
           ],
         ],
       ),
@@ -333,10 +373,15 @@ class _ForgotDialogState extends ConsumerState<_ForgotDialog> {
                     await ref
                         .read(authControllerProvider.notifier)
                         .sendPasswordReset(_email.text.trim());
-                    setState(() =>
-                        _message = 'If that account exists, instructions were sent.');
+                    setState(
+                      () => _message =
+                          'If that account exists, instructions were sent.',
+                    );
                   } catch (_) {
-                    setState(() => _message = 'Something went wrong. Please try again.');
+                    setState(
+                      () =>
+                          _message = 'Something went wrong. Please try again.',
+                    );
                   } finally {
                     if (mounted) setState(() => _busy = false);
                   }

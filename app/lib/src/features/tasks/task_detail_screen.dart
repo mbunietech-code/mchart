@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/api_exception.dart';
+import '../../core/env.dart';
 import '../../core/format.dart';
 import '../../models/enums.dart';
 import '../../models/task.dart';
@@ -13,6 +15,7 @@ import '../../widgets/avatar.dart';
 import '../../widgets/pills.dart';
 import '../../widgets/primitives.dart';
 import '../auth/auth_controller.dart';
+import 'attachment_picker.dart';
 import 'task_form.dart';
 import 'task_repository.dart';
 
@@ -33,9 +36,13 @@ class TaskDetailScreen extends ConsumerWidget {
         shape: const Border(bottom: BorderSide(color: AppColor.border)),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_rounded),
-          onPressed: () => context.canPop() ? context.pop() : context.go('/tasks'),
+          onPressed: () =>
+              context.canPop() ? context.pop() : context.go('/tasks'),
         ),
-        title: Text('#TASK-$taskId', style: Theme.of(context).textTheme.titleMedium),
+        title: Text(
+          '#TASK-$taskId',
+          style: Theme.of(context).textTheme.titleMedium,
+        ),
       ),
       body: task.when(
         loading: () => const LoadingBlock(height: 400),
@@ -61,20 +68,22 @@ class _Detail extends ConsumerWidget {
         child: ListView(
           padding: const EdgeInsets.all(24),
           children: [
-            LayoutBuilder(builder: (context, c) {
-              final wide = c.maxWidth > 720;
-              final main = _MainColumn(task: task);
-              final side = _SideColumn(task: task);
-              if (!wide) return Column(children: [main, Gap.lg, side]);
-              return Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(flex: 3, child: main),
-                  Gap.lg,
-                  Expanded(flex: 2, child: side),
-                ],
-              );
-            }),
+            LayoutBuilder(
+              builder: (context, c) {
+                final wide = c.maxWidth > 720;
+                final main = _MainColumn(task: task);
+                final side = _SideColumn(task: task);
+                if (!wide) return Column(children: [main, Gap.lg, side]);
+                return Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(flex: 3, child: main),
+                    Gap.lg,
+                    Expanded(flex: 2, child: side),
+                  ],
+                );
+              },
+            ),
           ],
         ),
       ),
@@ -99,19 +108,30 @@ class _MainColumn extends ConsumerWidget {
               const Divider(height: 28),
               Row(
                 children: [
-                  StatusPill(task.priority.label,
-                      color: task.priority.color,
-                      background: task.priority.color.withValues(alpha: 0.12)),
+                  StatusPill(
+                    task.priority.label,
+                    color: task.priority.color,
+                    background: task.priority.color.withValues(alpha: 0.12),
+                  ),
                   const Spacer(),
                   if (task.isOverdue)
-                    StatusPill.danger('Overdue', icon: Icons.warning_amber_rounded),
+                    StatusPill.danger(
+                      'Overdue',
+                      icon: Icons.warning_amber_rounded,
+                    ),
                 ],
               ),
               Gap.md,
-              Text(task.title, style: Theme.of(context).textTheme.headlineSmall),
+              Text(
+                task.title,
+                style: Theme.of(context).textTheme.headlineSmall,
+              ),
               if (task.description != null && task.description!.isNotEmpty) ...[
                 Gap.md,
-                Text(task.description!, style: Theme.of(context).textTheme.bodyLarge),
+                Text(
+                  task.description!,
+                  style: Theme.of(context).textTheme.bodyLarge,
+                ),
               ],
               Gap.lg,
               _WorkflowBar(task: task),
@@ -119,10 +139,67 @@ class _MainColumn extends ConsumerWidget {
           ),
         ),
         Gap.lg,
-        if (task.attachments.isNotEmpty) ...[
-          SectionCard(
-            title: 'Attachments',
-            child: Column(
+        _Attachments(task: task),
+        Gap.lg,
+        _Comments(task: task),
+      ],
+    );
+  }
+}
+
+class _Attachments extends ConsumerWidget {
+  const _Attachments({required this.task});
+  final Task task;
+
+  Uri _absoluteUrl(String url) =>
+      Uri.parse(url.startsWith('http') ? url : '${Env.apiBaseUrl}$url');
+
+  Future<void> _open(BuildContext context, TaskAttachment a) async {
+    final uri = _absoluteUrl(a.url);
+    final ok = await launchUrl(uri, mode: LaunchMode.externalApplication);
+    if (!ok && context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Could not open ${a.fileName ?? 'file'}.')),
+      );
+    }
+  }
+
+  Future<void> _delete(
+    BuildContext context,
+    WidgetRef ref,
+    TaskAttachment a,
+  ) async {
+    try {
+      await ref.read(taskRepositoryProvider).deleteAttachment(task.id, a.id);
+      ref.invalidate(taskDetailProvider(task.id));
+    } on ApiException catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(e.message)));
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final me = ref.watch(currentUserProvider);
+    return SectionCard(
+      title: 'Attachments',
+      trailing: IconButton(
+        tooltip: 'Add attachment',
+        icon: const Icon(Icons.add_circle_outline_rounded),
+        onPressed: () => pickAndUploadTaskAttachment(context, ref, task.id),
+      ),
+      child: task.attachments.isEmpty
+          ? Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              child: Text(
+                'No attachments yet.',
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+            )
+          : Column(
               children: [
                 for (final a in task.attachments)
                   ListTile(
@@ -130,28 +207,44 @@ class _MainColumn extends ConsumerWidget {
                     leading: Icon(
                       a.isImage
                           ? Icons.image_outlined
+                          : a.isVideo
+                          ? Icons.videocam_outlined
                           : a.isVoice
-                              ? Icons.mic_none_rounded
-                              : Icons.insert_drive_file_outlined,
+                          ? Icons.mic_none_rounded
+                          : Icons.insert_drive_file_outlined,
                       color: AppColor.textSecondary,
                     ),
-                    title: Text(a.fileName ?? 'Attachment',
-                        style: Theme.of(context).textTheme.bodyMedium
-                            ?.copyWith(color: AppColor.textPrimary)),
+                    title: Text(
+                      a.fileName ?? 'Attachment',
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: AppColor.textPrimary,
+                      ),
+                    ),
                     subtitle: Text(
                       '${Fmt.fileSize(a.fileSize)}'
                       '${a.durationSeconds != null ? ' · ${Fmt.duration(a.durationSeconds)}' : ''}'
                       '${a.uploader != null ? ' · ${a.uploader!.name}' : ''}',
                     ),
-                    trailing: const Icon(Icons.download_rounded, size: 18),
+                    onTap: () => _open(context, a),
+                    trailing:
+                        (me != null &&
+                            (me.isAdmin ||
+                                me.id == task.creator?.id ||
+                                me.id == a.uploader?.id))
+                        ? IconButton(
+                            icon: const Icon(
+                              Icons.delete_outline_rounded,
+                              size: 18,
+                            ),
+                            onPressed: () => _delete(context, ref, a),
+                          )
+                        : IconButton(
+                            icon: const Icon(Icons.download_rounded, size: 18),
+                            onPressed: () => _open(context, a),
+                          ),
                   ),
               ],
             ),
-          ),
-          Gap.lg,
-        ],
-        _Comments(task: task),
-      ],
     );
   }
 }
@@ -214,8 +307,8 @@ class _Step extends StatelessWidget {
     final color = warn
         ? AppColor.danger
         : (done || active)
-            ? AppColor.brand
-            : AppColor.textMuted;
+        ? AppColor.brand
+        : AppColor.textMuted;
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -230,8 +323,12 @@ class _Step extends StatelessWidget {
           child: done
               ? const Icon(Icons.check_rounded, size: 12, color: Colors.white)
               : warn
-                  ? const Icon(Icons.priority_high_rounded, size: 12, color: AppColor.danger)
-                  : null,
+              ? const Icon(
+                  Icons.priority_high_rounded,
+                  size: 12,
+                  color: AppColor.danger,
+                )
+              : null,
         ),
         const SizedBox(height: 4),
         Text(
@@ -258,15 +355,34 @@ class _WorkflowBar extends ConsumerStatefulWidget {
 class _WorkflowBarState extends ConsumerState<_WorkflowBar> {
   bool _busy = false;
 
+  static const _confirmations = {
+    'start': 'Task started — now In Progress.',
+    'complete': 'Task marked as Completed. Waiting for approval.',
+    'approve': 'Task approved.',
+    'return': 'Sent back for revision.',
+  };
+
   Future<void> _run(String action, {String? note}) async {
     setState(() => _busy = true);
     try {
-      await ref.read(taskRepositoryProvider).transition(widget.task.id, action, note: note);
+      await ref
+          .read(taskRepositoryProvider)
+          .transition(widget.task.id, action, note: note);
       ref.invalidate(taskDetailProvider(widget.task.id));
       ref.invalidate(taskBoardProvider);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(_confirmations[action] ?? 'Updated.'),
+            backgroundColor: AppColor.success,
+          ),
+        );
+      }
     } on ApiException catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.message)));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(e.message)));
       }
     } finally {
       if (mounted) setState(() => _busy = false);
@@ -275,7 +391,36 @@ class _WorkflowBarState extends ConsumerState<_WorkflowBar> {
 
   Future<void> _returnForRevision() async {
     final note = await _askNote(context);
-    if (note != null && note.trim().isNotEmpty) _run('return', note: note.trim());
+    if (note != null && note.trim().isNotEmpty) {
+      _run('return', note: note.trim());
+    }
+  }
+
+  Future<void> _override(TaskStatus target) async {
+    setState(() => _busy = true);
+    try {
+      await ref
+          .read(taskRepositoryProvider)
+          .setStatus(widget.task.id, target.wire);
+      ref.invalidate(taskDetailProvider(widget.task.id));
+      ref.invalidate(taskBoardProvider);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Status set to ${target.label}.'),
+            backgroundColor: AppColor.success,
+          ),
+        );
+      }
+    } on ApiException catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(e.message)));
+      }
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
   }
 
   @override
@@ -285,7 +430,8 @@ class _WorkflowBarState extends ConsumerState<_WorkflowBar> {
     if (me == null) return const SizedBox.shrink();
 
     final isAssignee = task.assignee?.id == me.id;
-    final canReview = me.role == UserRole.admin ||
+    final canReview =
+        me.role == UserRole.admin ||
         task.creator?.id == me.id ||
         (me.role == UserRole.manager && task.departmentId == me.departmentId);
     final allowed = task.allowedTransitions.toSet();
@@ -316,6 +462,14 @@ class _WorkflowBarState extends ConsumerState<_WorkflowBar> {
           icon: const Icon(Icons.replay_rounded, size: 18),
           label: const Text('Return for Revision'),
         ),
+      // Admin/manager/creator: jump straight to any status, outside the
+      // normal flow (e.g. correcting a stuck task, or on behalf of someone).
+      if (canReview)
+        _OverrideStatusButton(
+          currentStatus: task.status,
+          enabled: !_busy,
+          onSelected: _override,
+        ),
     ];
 
     if (buttons.isEmpty) {
@@ -345,12 +499,48 @@ class _WorkflowBarState extends ConsumerState<_WorkflowBar> {
           ),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
           FilledButton(
             onPressed: () => Navigator.pop(context, controller.text),
             child: const Text('Return'),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _OverrideStatusButton extends StatelessWidget {
+  const _OverrideStatusButton({
+    required this.currentStatus,
+    required this.enabled,
+    required this.onSelected,
+  });
+  final TaskStatus currentStatus;
+  final bool enabled;
+  final ValueChanged<TaskStatus> onSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    return PopupMenuButton<TaskStatus>(
+      enabled: enabled,
+      tooltip: 'Override status',
+      onSelected: onSelected,
+      itemBuilder: (_) => [
+        for (final s in TaskStatus.values)
+          if (s != currentStatus)
+            PopupMenuItem(value: s, child: Text('Set to ${s.label}')),
+      ],
+      child: OutlinedButton.icon(
+        onPressed: null,
+        icon: const Icon(Icons.tune_rounded, size: 18),
+        label: const Text('Override status'),
+        style: OutlinedButton.styleFrom(
+          disabledForegroundColor: AppColor.textSecondary,
+        ),
       ),
     );
   }
@@ -406,10 +596,7 @@ class _CommentsState extends ConsumerState<_Comments> {
               ),
             )
           else
-            for (final c in comments) ...[
-              _CommentTile(comment: c),
-              Gap.md,
-            ],
+            for (final c in comments) ...[_CommentTile(comment: c), Gap.md],
           const Divider(height: 24),
           Row(
             children: [
@@ -418,7 +605,9 @@ class _CommentsState extends ConsumerState<_Comments> {
                   controller: _controller,
                   minLines: 1,
                   maxLines: 4,
-                  decoration: const InputDecoration(hintText: 'Write a comment...'),
+                  decoration: const InputDecoration(
+                    hintText: 'Write a comment...',
+                  ),
                   onSubmitted: (_) => _send(),
                 ),
               ),
@@ -453,7 +642,9 @@ class _CommentTile extends StatelessWidget {
           child: Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: comment.isRevisionNote ? AppColor.warningSoft : AppColor.surfaceMuted,
+              color: comment.isRevisionNote
+                  ? AppColor.warningSoft
+                  : AppColor.surfaceMuted,
               borderRadius: AppRadius.md,
               border: comment.isRevisionNote
                   ? Border.all(color: AppColor.warning.withValues(alpha: 0.4))
@@ -464,20 +655,30 @@ class _CommentTile extends StatelessWidget {
               children: [
                 Row(
                   children: [
-                    Text(comment.user?.name ?? 'User',
-                        style: Theme.of(context).textTheme.titleSmall),
+                    Text(
+                      comment.user?.name ?? 'User',
+                      style: Theme.of(context).textTheme.titleSmall,
+                    ),
                     if (comment.isRevisionNote) ...[
                       Gap.sm,
                       StatusPill.warning('Revision'),
                     ],
                     const Spacer(),
-                    Text(Fmt.relative(comment.createdAt),
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(fontSize: 11)),
+                    Text(
+                      Fmt.relative(comment.createdAt),
+                      style: Theme.of(
+                        context,
+                      ).textTheme.bodySmall?.copyWith(fontSize: 11),
+                    ),
                   ],
                 ),
                 Gap.xs,
-                Text(comment.comment, style: Theme.of(context).textTheme.bodyMedium
-                    ?.copyWith(color: AppColor.textPrimary)),
+                Text(
+                  comment.comment,
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodyMedium?.copyWith(color: AppColor.textPrimary),
+                ),
               ],
             ),
           ),
@@ -494,8 +695,8 @@ class _SideColumn extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final me = ref.watch(currentUserProvider);
-    final canEdit = me != null &&
-        (me.role == UserRole.admin || task.creator?.id == me.id);
+    final canEdit =
+        me != null && (me.role == UserRole.admin || task.creator?.id == me.id);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -506,7 +707,12 @@ class _SideColumn extends ConsumerWidget {
             children: [
               Row(
                 children: [
-                  Expanded(child: Text('Details', style: Theme.of(context).textTheme.titleMedium)),
+                  Expanded(
+                    child: Text(
+                      'Details',
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                  ),
                   if (canEdit)
                     IconButton(
                       icon: const Icon(Icons.edit_outlined, size: 18),
@@ -515,14 +721,25 @@ class _SideColumn extends ConsumerWidget {
                 ],
               ),
               Gap.sm,
-              _MetaRow(label: 'Assignee', child: _person(context, task.assignee)),
-              _MetaRow(label: 'Created by', child: _person(context, task.creator)),
+              _MetaRow(
+                label: 'Assignee',
+                child: _person(context, task.assignee),
+              ),
+              _MetaRow(
+                label: 'Created by',
+                child: _person(context, task.creator),
+              ),
               _MetaRow(
                 label: 'Deadline',
-                child: Text(Fmt.deadline(task.deadline),
-                    style: TextStyle(
-                        color: task.isOverdue ? AppColor.danger : AppColor.textPrimary,
-                        fontWeight: FontWeight.w600)),
+                child: Text(
+                  Fmt.deadline(task.deadline),
+                  style: TextStyle(
+                    color: task.isOverdue
+                        ? AppColor.danger
+                        : AppColor.textPrimary,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
               ),
               _MetaRow(
                 label: 'Created',
@@ -566,22 +783,25 @@ class _MetaRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Padding(
-        padding: const EdgeInsets.symmetric(vertical: 7),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            SizedBox(
-              width: 110,
-              child: Text(label, style: Theme.of(context).textTheme.bodySmall),
-            ),
-            Expanded(child: DefaultTextStyle.merge(
-              style: Theme.of(context).textTheme.bodyMedium
-                  ?.copyWith(color: AppColor.textPrimary),
-              child: child,
-            )),
-          ],
+    padding: const EdgeInsets.symmetric(vertical: 7),
+    child: Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SizedBox(
+          width: 110,
+          child: Text(label, style: Theme.of(context).textTheme.bodySmall),
         ),
-      );
+        Expanded(
+          child: DefaultTextStyle.merge(
+            style: Theme.of(
+              context,
+            ).textTheme.bodyMedium?.copyWith(color: AppColor.textPrimary),
+            child: child,
+          ),
+        ),
+      ],
+    ),
+  );
 }
 
 class _HistoryTile extends StatelessWidget {
@@ -599,8 +819,12 @@ class _HistoryTile extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.only(top: 3),
             child: Container(
-              width: 8, height: 8,
-              decoration: BoxDecoration(color: to.color, shape: BoxShape.circle),
+              width: 8,
+              height: 8,
+              decoration: BoxDecoration(
+                color: to.color,
+                shape: BoxShape.circle,
+              ),
             ),
           ),
           Gap.md,
@@ -614,12 +838,18 @@ class _HistoryTile extends StatelessWidget {
                 ),
                 Text(
                   '${event.changedBy?.name ?? 'System'} · ${Fmt.relative(event.changedAt)}',
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(fontSize: 11),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodySmall?.copyWith(fontSize: 11),
                 ),
                 if (event.note != null && event.note!.isNotEmpty)
-                  Text('“${event.note}”',
-                      style: Theme.of(context).textTheme.bodySmall
-                          ?.copyWith(fontStyle: FontStyle.italic, fontSize: 11)),
+                  Text(
+                    '“${event.note}”',
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      fontStyle: FontStyle.italic,
+                      fontSize: 11,
+                    ),
+                  ),
               ],
             ),
           ),

@@ -1,7 +1,12 @@
 import 'enums.dart';
 
 class Department {
-  Department({required this.id, required this.name, this.description, this.usersCount});
+  Department({
+    required this.id,
+    required this.name,
+    this.description,
+    this.usersCount,
+  });
 
   final int id;
   final String name;
@@ -9,11 +14,11 @@ class Department {
   final int? usersCount;
 
   factory Department.fromJson(Map<String, dynamic> j) => Department(
-        id: (j['id'] as num).toInt(),
-        name: j['name'] as String,
-        description: j['description'] as String?,
-        usersCount: (j['users_count'] as num?)?.toInt(),
-      );
+    id: (j['id'] as num).toInt(),
+    name: j['name'] as String,
+    description: j['description'] as String?,
+    usersCount: (j['users_count'] as num?)?.toInt(),
+  );
 }
 
 class User {
@@ -41,12 +46,17 @@ class User {
 
   bool get isActive => status == 'active';
   bool get isOnline =>
-      lastSeenAt != null && DateTime.now().difference(lastSeenAt!).inMinutes < 3;
+      lastSeenAt != null &&
+      DateTime.now().difference(lastSeenAt!).inMinutes < 3;
   bool get isAdmin => role == UserRole.admin;
   bool get isManagerOrAdmin => role.isManagerOrAdmin;
 
   String get initials {
-    final parts = name.trim().split(RegExp(r'\s+')).where((p) => p.isNotEmpty).toList();
+    final parts = name
+        .trim()
+        .split(RegExp(r'\s+'))
+        .where((p) => p.isNotEmpty)
+        .toList();
     if (parts.isEmpty) return '?';
     if (parts.length == 1) {
       final p = parts.first;
@@ -56,18 +66,19 @@ class User {
   }
 
   factory User.fromJson(Map<String, dynamic> j) => User(
-        id: (j['id'] as num).toInt(),
-        name: j['name'] as String,
-        email: j['email'] as String? ?? '',
-        phone: j['phone'] as String?,
-        role: UserRole.from(j['role'] as String?),
-        status: j['status'] as String? ?? 'active',
-        departmentId: (j['department_id'] as num?)?.toInt(),
-        department: j['department'] is Map
-            ? Department.fromJson(j['department'] as Map<String, dynamic>)
-            : null,
-        lastSeenAt: _date(j['last_seen_at']),
-      );
+    id: (j['id'] as num).toInt(),
+    name: j['name'] as String,
+    email: j['email'] as String? ?? '',
+    phone: j['phone'] as String?,
+    role: UserRole.from(j['role'] as String?),
+    status: j['status'] as String? ?? 'active',
+    departmentId: (j['department_id'] as num?)?.toInt(),
+    department: j['department'] is Map
+        ? Department.fromJson(j['department'] as Map<String, dynamic>)
+        : null,
+    lastSeenAt: _date(j['last_seen_at']),
+  );
 }
 
-DateTime? _date(Object? v) => v == null ? null : DateTime.tryParse(v.toString())?.toLocal();
+DateTime? _date(Object? v) =>
+    v == null ? null : DateTime.tryParse(v.toString())?.toLocal();

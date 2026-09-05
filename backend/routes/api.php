@@ -82,6 +82,7 @@ Route::middleware(['auth:sanctum', 'active'])->group(function () {
     Route::post('tasks/{task}/complete', [TaskWorkflowController::class, 'complete']);
     Route::post('tasks/{task}/approve', [TaskWorkflowController::class, 'approve']);
     Route::post('tasks/{task}/return', [TaskWorkflowController::class, 'return']);
+    Route::post('tasks/{task}/set-status', [TaskWorkflowController::class, 'setStatus']);
 
     Route::get('tasks/{task}/comments', [TaskCommentController::class, 'index']);
     Route::post('tasks/{task}/comments', [TaskCommentController::class, 'store']);

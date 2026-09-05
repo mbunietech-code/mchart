@@ -30,13 +30,15 @@ class RealtimeClient {
   ValueListenable<bool> get connected => _connected;
 
   /// channelName -> (eventName -> listeners)
-  final Map<String, Map<String, List<void Function(Map<String, dynamic>)>>> _handlers = {};
+  final Map<String, Map<String, List<void Function(Map<String, dynamic>)>>>
+  _handlers = {};
   final Set<String> _subscribed = {};
 
   void connect() {
     if (!Env.realtimeEnabled) return;
     if (_disposed || _channel != null || _connecting) return;
-    if (_attempts >= 8) return; // gave up; a later explicit connect() resets this
+    if (_attempts >= 8)
+      return; // gave up; a later explicit connect() resets this
     _connecting = true;
 
     final WebSocketChannel channel;
@@ -57,12 +59,14 @@ class RealtimeClient {
       cancelOnError: true,
     );
 
-    channel.ready.then((_) {
-      _connecting = false;
-      _attempts = 0;
-    }).catchError((Object _) {
-      _connecting = false;
-    });
+    channel.ready
+        .then((_) {
+          _connecting = false;
+          _attempts = 0;
+        })
+        .catchError((Object _) {
+          _connecting = false;
+        });
   }
 
   /// Call to retry after the client has given up (e.g. app resumed).
@@ -144,7 +148,11 @@ class RealtimeClient {
   }
 
   /// Register a handler. Returns a disposer.
-  VoidCallback on(String channel, String event, void Function(Map<String, dynamic>) handler) {
+  VoidCallback on(
+    String channel,
+    String event,
+    void Function(Map<String, dynamic>) handler,
+  ) {
     final normalized = event.startsWith('.') ? event.substring(1) : event;
     final channelMap = _handlers.putIfAbsent(
       channel,
@@ -172,7 +180,8 @@ class RealtimeClient {
     }
   }
 
-  void _send(Map<String, dynamic> payload) => _channel?.sink.add(jsonEncode(payload));
+  void _send(Map<String, dynamic> payload) =>
+      _channel?.sink.add(jsonEncode(payload));
 
   void _startPing() {
     _pingTimer?.cancel();
@@ -188,7 +197,8 @@ class RealtimeClient {
     _sub?.cancel();
     _channel = null;
     _sub = null;
-    if (_disposed || _reconnectTimer != null && _reconnectTimer!.isActive) return;
+    if (_disposed || _reconnectTimer != null && _reconnectTimer!.isActive)
+      return;
     _attempts = (_attempts + 1).clamp(1, 10);
     final delay = Duration(seconds: (3 * _attempts).clamp(3, 30));
     _reconnectTimer?.cancel();

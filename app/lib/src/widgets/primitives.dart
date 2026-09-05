@@ -73,10 +73,16 @@ class SectionCard extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(title, style: Theme.of(context).textTheme.titleLarge),
+                      Text(
+                        title,
+                        style: Theme.of(context).textTheme.titleLarge,
+                      ),
                       if (subtitle != null) ...[
                         Gap.xs,
-                        Text(subtitle!, style: Theme.of(context).textTheme.bodySmall),
+                        Text(
+                          subtitle!,
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
                       ],
                     ],
                   ),
@@ -86,15 +92,17 @@ class SectionCard extends StatelessWidget {
             ),
           ),
           Padding(
-            padding: EdgeInsets.fromLTRB(h, 0, h, footer == null ? padding.bottom : 12),
+            padding: EdgeInsets.fromLTRB(
+              h,
+              0,
+              h,
+              footer == null ? padding.bottom : 12,
+            ),
             child: child,
           ),
           if (footer != null) ...[
             const Divider(height: 1),
-            Padding(
-              padding: EdgeInsets.fromLTRB(h, 12, h, 12),
-              child: footer!,
-            ),
+            Padding(padding: EdgeInsets.fromLTRB(h, 12, h, 12), child: footer!),
           ],
         ],
       ),
@@ -148,15 +156,15 @@ class LoadingBlock extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => SizedBox(
-        height: height,
-        child: const Center(
-          child: SizedBox(
-            width: 22,
-            height: 22,
-            child: CircularProgressIndicator(strokeWidth: 2.4),
-          ),
-        ),
-      );
+    height: height,
+    child: const Center(
+      child: SizedBox(
+        width: 22,
+        height: 22,
+        child: CircularProgressIndicator(strokeWidth: 2.4),
+      ),
+    ),
+  );
 }
 
 class ErrorBlock extends StatelessWidget {
@@ -166,48 +174,55 @@ class ErrorBlock extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(Icons.error_outline_rounded, color: AppColor.danger),
-              Gap.sm,
-              Text(message, textAlign: TextAlign.center),
-              if (onRetry != null) ...[
-                Gap.md,
-                OutlinedButton(onPressed: onRetry, child: const Text('Try again')),
-              ],
-            ],
-          ),
-        ),
-      );
+    child: Padding(
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(Icons.error_outline_rounded, color: AppColor.danger),
+          Gap.sm,
+          Text(message, textAlign: TextAlign.center),
+          if (onRetry != null) ...[
+            Gap.md,
+            OutlinedButton(onPressed: onRetry, child: const Text('Try again')),
+          ],
+        ],
+      ),
+    ),
+  );
 }
 
 class EmptyState extends StatelessWidget {
-  const EmptyState({super.key, required this.icon, required this.title, this.message});
+  const EmptyState({
+    super.key,
+    required this.icon,
+    required this.title,
+    this.message,
+  });
   final IconData icon;
   final String title;
   final String? message;
 
   @override
   Widget build(BuildContext context) => Center(
-        child: Padding(
-          padding: const EdgeInsets.all(28),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(icon, size: 34, color: AppColor.textMuted),
-              Gap.md,
-              Text(title, style: Theme.of(context).textTheme.titleMedium),
-              if (message != null) ...[
-                Gap.xs,
-                Text(message!,
-                    textAlign: TextAlign.center,
-                    style: Theme.of(context).textTheme.bodySmall),
-              ],
-            ],
-          ),
-        ),
-      );
+    child: Padding(
+      padding: const EdgeInsets.all(28),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 34, color: AppColor.textMuted),
+          Gap.md,
+          Text(title, style: Theme.of(context).textTheme.titleMedium),
+          if (message != null) ...[
+            Gap.xs,
+            Text(
+              message!,
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+          ],
+        ],
+      ),
+    ),
+  );
 }

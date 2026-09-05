@@ -36,7 +36,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       children: [
         Center(
           child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: AppLayout.contentMaxWidth),
+            constraints: const BoxConstraints(
+              maxWidth: AppLayout.contentMaxWidth,
+            ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
@@ -44,12 +46,15 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   breadcrumb: 'Operations • Organization Management',
                   title: 'Admin Settings',
                   subtitle:
-                      'Manage users, departments, and roles across the MbuniTech workspace.',
+                      'Manage users, departments, and roles across the Mbunietech workspace.',
                   actions: [
                     if (isAdmin && _tab == 0)
                       FilledButton.icon(
                         onPressed: () => showUserForm(context, ref),
-                        icon: const Icon(Icons.person_add_alt_1_rounded, size: 18),
+                        icon: const Icon(
+                          Icons.person_add_alt_1_rounded,
+                          size: 18,
+                        ),
                         label: const Text('Invite User'),
                       ),
                   ],
@@ -59,7 +64,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   spacing: 12,
                   runSpacing: 12,
                   children: [
-                    ref.watch(usersProvider).maybeWhen(
+                    ref
+                        .watch(usersProvider)
+                        .maybeWhen(
                           data: (p) => StatChip(
                             icon: Icons.groups_outlined,
                             value: '${p.total}',
@@ -78,10 +85,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   ],
                 ),
                 Gap.xl,
-                _Tabs(
-                  index: _tab,
-                  onChanged: (i) => setState(() => _tab = i),
-                ),
+                _Tabs(index: _tab, onChanged: (i) => setState(() => _tab = i)),
                 Gap.lg,
                 if (!isAdmin)
                   const AppCard(
@@ -125,7 +129,10 @@ class _Tabs extends StatelessWidget {
             GestureDetector(
               onTap: () => onChanged(i),
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 10),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 4,
+                  vertical: 10,
+                ),
                 margin: const EdgeInsets.only(right: 20),
                 decoration: BoxDecoration(
                   border: Border(
@@ -170,46 +177,66 @@ class _UsersTab extends ConsumerWidget {
         children: [
           Padding(
             padding: const EdgeInsets.all(14),
-            child: Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    decoration: const InputDecoration(
-                      hintText: 'Search by name, email, or department...',
-                      prefixIcon: Icon(Icons.search_rounded, size: 18),
-                    ),
-                    onChanged: (v) => ref.read(userQueryProvider.notifier).state =
-                        query.copyWith(search: v, page: 1),
+            child: LayoutBuilder(
+              builder: (context, c) {
+                final search = TextField(
+                  decoration: const InputDecoration(
+                    hintText: 'Search by name, email, or department...',
+                    prefixIcon: Icon(Icons.search_rounded, size: 18),
                   ),
-                ),
-                Gap.md,
-                departments.maybeWhen(
-                  data: (list) => _FilterDropdown<int?>(
-                    value: query.departmentId,
-                    hint: 'All Departments',
-                    items: {
-                      null: 'All Departments',
-                      for (final d in list) d.id: d.name,
-                    },
-                    onChanged: (v) => ref.read(userQueryProvider.notifier).state =
-                        query.copyWith(departmentId: v, page: 1),
-                  ),
-                  orElse: () => const SizedBox.shrink(),
-                ),
-                Gap.sm,
-                _FilterDropdown<String?>(
-                  value: query.role,
-                  hint: 'All Roles',
-                  items: const {
-                    null: 'All Roles',
-                    'admin': 'Admin',
-                    'manager': 'Manager',
-                    'staff': 'Staff',
-                  },
                   onChanged: (v) => ref.read(userQueryProvider.notifier).state =
-                      query.copyWith(role: v, page: 1),
-                ),
-              ],
+                      query.copyWith(search: v, page: 1),
+                );
+                final filters = [
+                  departments.maybeWhen(
+                    data: (list) => _FilterDropdown<int?>(
+                      value: query.departmentId,
+                      hint: 'All Departments',
+                      items: {
+                        null: 'All Departments',
+                        for (final d in list) d.id: d.name,
+                      },
+                      onChanged: (v) =>
+                          ref.read(userQueryProvider.notifier).state = query
+                              .copyWith(departmentId: v, page: 1),
+                    ),
+                    orElse: () => const SizedBox.shrink(),
+                  ),
+                  _FilterDropdown<String?>(
+                    value: query.role,
+                    hint: 'All Roles',
+                    items: const {
+                      null: 'All Roles',
+                      'admin': 'Admin',
+                      'manager': 'Manager',
+                      'staff': 'Staff',
+                    },
+                    onChanged: (v) =>
+                        ref.read(userQueryProvider.notifier).state = query
+                            .copyWith(role: v, page: 1),
+                  ),
+                ];
+
+                if (c.maxWidth > 620) {
+                  return Row(
+                    children: [
+                      Expanded(child: search),
+                      Gap.md,
+                      filters[0],
+                      Gap.sm,
+                      filters[1],
+                    ],
+                  );
+                }
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    search,
+                    Gap.sm,
+                    Wrap(spacing: 8, runSpacing: 8, children: filters),
+                  ],
+                );
+              },
             ),
           ),
           const Divider(height: 1),
@@ -221,8 +248,6 @@ class _UsersTab extends ConsumerWidget {
             ),
             data: (page) => Column(
               children: [
-                const _UserHeaderRow(),
-                const Divider(height: 1),
                 if (page.items.isEmpty)
                   const Padding(
                     padding: EdgeInsets.all(28),
@@ -232,7 +257,24 @@ class _UsersTab extends ConsumerWidget {
                     ),
                   )
                 else
-                  for (final u in page.items) _UserRow(user: u),
+                  LayoutBuilder(
+                    builder: (context, c) {
+                      if (c.maxWidth > 640) {
+                        return Column(
+                          children: [
+                            const _UserHeaderRow(),
+                            const Divider(height: 1),
+                            for (final u in page.items) _UserRow(user: u),
+                          ],
+                        );
+                      }
+                      return Column(
+                        children: [
+                          for (final u in page.items) _UserCard(user: u),
+                        ],
+                      );
+                    },
+                  ),
                 const Divider(height: 1),
                 Padding(
                   padding: const EdgeInsets.all(12),
@@ -246,16 +288,18 @@ class _UsersTab extends ConsumerWidget {
                       IconButton(
                         onPressed: page.currentPage > 1
                             ? () => ref.read(userQueryProvider.notifier).state =
-                                query.copyWith(page: page.currentPage - 1)
+                                  query.copyWith(page: page.currentPage - 1)
                             : null,
                         icon: const Icon(Icons.chevron_left_rounded),
                       ),
-                      Text('${page.currentPage} / ${page.lastPage}',
-                          style: Theme.of(context).textTheme.bodySmall),
+                      Text(
+                        '${page.currentPage} / ${page.lastPage}',
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
                       IconButton(
                         onPressed: page.hasMore
                             ? () => ref.read(userQueryProvider.notifier).state =
-                                query.copyWith(page: page.currentPage + 1)
+                                  query.copyWith(page: page.currentPage + 1)
                             : null,
                         icon: const Icon(Icons.chevron_right_rounded),
                       ),
@@ -298,7 +342,9 @@ class _FilterDropdown<T> extends StatelessWidget {
         child: DropdownButton<T>(
           value: value,
           isDense: true,
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppColor.textPrimary),
+          style: Theme.of(
+            context,
+          ).textTheme.bodyMedium?.copyWith(color: AppColor.textPrimary),
           items: [
             for (final e in items.entries)
               DropdownMenuItem(value: e.key, child: Text(e.value)),
@@ -316,9 +362,12 @@ class _UserHeaderRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     Widget cell(String s, int flex) => Expanded(
-          flex: flex,
-          child: Text(s.toUpperCase(), style: Theme.of(context).textTheme.labelSmall),
-        );
+      flex: flex,
+      child: Text(
+        s.toUpperCase(),
+        style: Theme.of(context).textTheme.labelSmall,
+      ),
+    );
     return Container(
       color: AppColor.surfaceMuted,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
@@ -359,15 +408,20 @@ class _UserRow extends ConsumerWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(user.name,
-                          style: Theme.of(context)
-                              .textTheme
-                              .titleSmall
-                              ?.copyWith(color: AppColor.brand)),
-                      Text(user.email,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: Theme.of(context).textTheme.bodySmall?.copyWith(fontSize: 11)),
+                      Text(
+                        user.name,
+                        style: Theme.of(
+                          context,
+                        ).textTheme.titleSmall?.copyWith(color: AppColor.brand),
+                      ),
+                      Text(
+                        user.email,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(
+                          context,
+                        ).textTheme.bodySmall?.copyWith(fontSize: 11),
+                      ),
                     ],
                   ),
                 ),
@@ -376,8 +430,12 @@ class _UserRow extends ConsumerWidget {
           ),
           Expanded(
             flex: 2,
-            child: Text(user.department?.name ?? '—',
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppColor.brand)),
+            child: Text(
+              user.department?.name ?? '—',
+              style: Theme.of(
+                context,
+              ).textTheme.bodySmall?.copyWith(color: AppColor.brand),
+            ),
           ),
           Expanded(flex: 2, child: _RoleBadge(role: user.role)),
           Expanded(
@@ -385,7 +443,9 @@ class _UserRow extends ConsumerWidget {
             child: StatusPill(
               user.isActive ? 'Active' : 'Inactive',
               color: user.isActive ? AppColor.success : AppColor.textMuted,
-              background: user.isActive ? AppColor.successSoft : AppColor.surfaceMuted,
+              background: user.isActive
+                  ? AppColor.successSoft
+                  : AppColor.surfaceMuted,
               dot: true,
             ),
           ),
@@ -393,7 +453,9 @@ class _UserRow extends ConsumerWidget {
             flex: 2,
             child: Text(
               user.isOnline ? 'Online' : Fmt.relative(user.lastSeenAt),
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(fontSize: 11),
+              style: Theme.of(
+                context,
+              ).textTheme.bodySmall?.copyWith(fontSize: 11),
             ),
           ),
           SizedBox(
@@ -404,9 +466,10 @@ class _UserRow extends ConsumerWidget {
                 if (v == 'edit') {
                   showUserForm(context, ref, user: user);
                 } else if (v == 'toggle') {
-                  await ref.read(directoryRepositoryProvider).updateUser(user.id, {
-                    'status': user.isActive ? 'inactive' : 'active',
-                  });
+                  await ref.read(directoryRepositoryProvider).updateUser(
+                    user.id,
+                    {'status': user.isActive ? 'inactive' : 'active'},
+                  );
                   ref.invalidate(usersProvider);
                 }
               },
@@ -414,10 +477,111 @@ class _UserRow extends ConsumerWidget {
                 const PopupMenuItem(value: 'edit', child: Text('Edit')),
                 PopupMenuItem(
                   value: 'toggle',
-                  child: Text(user.isActive ? 'Deactivate account' : 'Activate account'),
+                  child: Text(
+                    user.isActive ? 'Deactivate account' : 'Activate account',
+                  ),
                 ),
               ],
             ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Narrow-screen stand-in for `_UserHeaderRow` + `_UserRow`: the same info,
+/// stacked as a card instead of squeezed into a 5-column table.
+class _UserCard extends ConsumerWidget {
+  const _UserCard({required this.user});
+  final User user;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: const BoxDecoration(
+        border: Border(bottom: BorderSide(color: AppColor.border)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              AppAvatar.forUser(user, size: 36),
+              Gap.md,
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      user.name,
+                      style: Theme.of(
+                        context,
+                      ).textTheme.titleSmall?.copyWith(color: AppColor.brand),
+                    ),
+                    Text(
+                      user.email,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(
+                        context,
+                      ).textTheme.bodySmall?.copyWith(fontSize: 11),
+                    ),
+                  ],
+                ),
+              ),
+              PopupMenuButton<String>(
+                icon: const Icon(Icons.more_horiz_rounded, size: 18),
+                onSelected: (v) async {
+                  if (v == 'edit') {
+                    showUserForm(context, ref, user: user);
+                  } else if (v == 'toggle') {
+                    await ref.read(directoryRepositoryProvider).updateUser(
+                      user.id,
+                      {'status': user.isActive ? 'inactive' : 'active'},
+                    );
+                    ref.invalidate(usersProvider);
+                  }
+                },
+                itemBuilder: (_) => [
+                  const PopupMenuItem(value: 'edit', child: Text('Edit')),
+                  PopupMenuItem(
+                    value: 'toggle',
+                    child: Text(
+                      user.isActive ? 'Deactivate account' : 'Activate account',
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+          Gap.sm,
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              _RoleBadge(role: user.role),
+              StatusPill(
+                user.isActive ? 'Active' : 'Inactive',
+                color: user.isActive ? AppColor.success : AppColor.textMuted,
+                background: user.isActive
+                    ? AppColor.successSoft
+                    : AppColor.surfaceMuted,
+                dot: true,
+              ),
+              if (user.department != null)
+                StatusPill(
+                  user.department!.name,
+                  color: AppColor.brand,
+                  background: AppColor.brandSoft,
+                ),
+              StatusPill(
+                user.isOnline ? 'Online' : Fmt.relative(user.lastSeenAt),
+                color: AppColor.textSecondary,
+                background: AppColor.surfaceMuted,
+              ),
+            ],
           ),
         ],
       ),
@@ -432,9 +596,21 @@ class _RoleBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final (color, bg, icon) = switch (role) {
-      UserRole.admin => (AppColor.brand, AppColor.brandSoft, Icons.shield_outlined),
-      UserRole.manager => (AppColor.accent, AppColor.accentSoft, Icons.workspace_premium_outlined),
-      UserRole.staff => (AppColor.slate, AppColor.surfaceMuted, Icons.code_rounded),
+      UserRole.admin => (
+        AppColor.brand,
+        AppColor.brandSoft,
+        Icons.shield_outlined,
+      ),
+      UserRole.manager => (
+        AppColor.accent,
+        AppColor.accentSoft,
+        Icons.workspace_premium_outlined,
+      ),
+      UserRole.staff => (
+        AppColor.slate,
+        AppColor.surfaceMuted,
+        Icons.code_rounded,
+      ),
     };
     return Align(
       alignment: Alignment.centerLeft,
@@ -471,28 +647,40 @@ class _DepartmentsTab extends ConsumerWidget {
                       width: 36,
                       height: 36,
                       decoration: BoxDecoration(
-                        color: AppColor.departmentPalette[i % AppColor.departmentPalette.length]
+                        color: AppColor
+                            .departmentPalette[i %
+                                AppColor.departmentPalette.length]
                             .withValues(alpha: 0.14),
                         borderRadius: AppRadius.md,
                       ),
-                      child: Icon(Icons.apartment_rounded,
-                          size: 18,
-                          color: AppColor
-                              .departmentPalette[i % AppColor.departmentPalette.length]),
+                      child: Icon(
+                        Icons.apartment_rounded,
+                        size: 18,
+                        color:
+                            AppColor.departmentPalette[i %
+                                AppColor.departmentPalette.length],
+                      ),
                     ),
                     Gap.md,
-                    Text(list[i].name, style: Theme.of(context).textTheme.titleMedium),
+                    Text(
+                      list[i].name,
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
                     if (list[i].description != null) ...[
                       Gap.xs,
-                      Text(list[i].description!,
-                          style: Theme.of(context).textTheme.bodySmall),
+                      Text(
+                        list[i].description!,
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
                     ],
                     Gap.md,
-                    Text('${list[i].usersCount ?? 0} staff',
-                        style: Theme.of(context)
-                            .textTheme
-                            .bodySmall
-                            ?.copyWith(fontWeight: FontWeight.w600, color: AppColor.slate)),
+                    Text(
+                      '${list[i].usersCount ?? 0} staff',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        fontWeight: FontWeight.w600,
+                        color: AppColor.slate,
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -523,46 +711,74 @@ class _RolesTab extends StatelessWidget {
   Widget build(BuildContext context) {
     return AppCard(
       padding: EdgeInsets.zero,
-      child: Column(
-        children: [
-          Container(
-            color: AppColor.surfaceMuted,
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-            child: Row(
-              children: [
-                Expanded(flex: 4, child: Text('PERMISSION', style: Theme.of(context).textTheme.labelSmall)),
-                for (final r in ['ADMIN', 'MANAGER', 'STAFF'])
-                  Expanded(
-                    child: Center(
-                        child: Text(r, style: Theme.of(context).textTheme.labelSmall)),
-                  ),
-              ],
-            ),
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+            minWidth: MediaQuery.sizeOf(context).width - 56,
           ),
-          const Divider(height: 1),
-          for (final entry in _matrix.entries)
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              decoration: const BoxDecoration(
-                border: Border(bottom: BorderSide(color: AppColor.border)),
-              ),
-              child: Row(
-                children: [
-                  Expanded(flex: 4, child: Text(entry.key)),
-                  for (final allowed in entry.value)
+          child: Column(
+            children: [
+              Container(
+                color: AppColor.surfaceMuted,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 10,
+                ),
+                child: Row(
+                  children: [
                     Expanded(
-                      child: Center(
-                        child: Icon(
-                          allowed ? Icons.check_circle_rounded : Icons.remove_rounded,
-                          size: 18,
-                          color: allowed ? AppColor.success : AppColor.textMuted,
-                        ),
+                      flex: 4,
+                      child: Text(
+                        'PERMISSION',
+                        style: Theme.of(context).textTheme.labelSmall,
                       ),
                     ),
-                ],
+                    for (final r in ['ADMIN', 'MANAGER', 'STAFF'])
+                      Expanded(
+                        child: Center(
+                          child: Text(
+                            r,
+                            style: Theme.of(context).textTheme.labelSmall,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
               ),
-            ),
-        ],
+              const Divider(height: 1),
+              for (final entry in _matrix.entries)
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
+                  decoration: const BoxDecoration(
+                    border: Border(bottom: BorderSide(color: AppColor.border)),
+                  ),
+                  child: Row(
+                    children: [
+                      Expanded(flex: 4, child: Text(entry.key)),
+                      for (final allowed in entry.value)
+                        Expanded(
+                          child: Center(
+                            child: Icon(
+                              allowed
+                                  ? Icons.check_circle_rounded
+                                  : Icons.remove_rounded,
+                              size: 18,
+                              color: allowed
+                                  ? AppColor.success
+                                  : AppColor.textMuted,
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+            ],
+          ),
+        ),
       ),
     );
   }

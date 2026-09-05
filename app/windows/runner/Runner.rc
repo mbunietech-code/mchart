@@ -89,13 +89,13 @@ BEGIN
     BEGIN
         BLOCK "040904e4"
         BEGIN
-            VALUE "CompanyName", "com.mbunietech" "\0"
-            VALUE "FileDescription", "mchart" "\0"
+            VALUE "CompanyName", "Mbunietech Technologies Limited" "\0"
+            VALUE "FileDescription", "MChart - Mbunietech Workspace" "\0"
             VALUE "FileVersion", VERSION_AS_STRING "\0"
-            VALUE "InternalName", "mchart" "\0"
-            VALUE "LegalCopyright", "Copyright (C) 2026 com.mbunietech. All rights reserved." "\0"
+            VALUE "InternalName", "MChart" "\0"
+            VALUE "LegalCopyright", "Copyright (C) 2026 Mbunietech Technologies Limited. All rights reserved." "\0"
             VALUE "OriginalFilename", "mchart.exe" "\0"
-            VALUE "ProductName", "mchart" "\0"
+            VALUE "ProductName", "MChart" "\0"
             VALUE "ProductVersion", VERSION_AS_STRING "\0"
         END
     END

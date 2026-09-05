@@ -1,4 +1,5 @@
-DateTime? _date(Object? v) => v == null ? null : DateTime.tryParse(v.toString())?.toLocal();
+DateTime? _date(Object? v) =>
+    v == null ? null : DateTime.tryParse(v.toString())?.toLocal();
 
 class DashboardCounts {
   DashboardCounts({
@@ -16,14 +17,14 @@ class DashboardCounts {
   int get total => assigned + inProgress + completed + approved + revision;
 
   factory DashboardCounts.fromJson(Map<String, dynamic> j) => DashboardCounts(
-        assigned: (j['assigned'] as num?)?.toInt() ?? 0,
-        inProgress: (j['in_progress'] as num?)?.toInt() ?? 0,
-        completed: (j['completed'] as num?)?.toInt() ?? 0,
-        approved: (j['approved'] as num?)?.toInt() ?? 0,
-        revision: (j['revision'] as num?)?.toInt() ?? 0,
-        open: (j['open'] as num?)?.toInt() ?? 0,
-        overdue: (j['overdue'] as num?)?.toInt() ?? 0,
-      );
+    assigned: (j['assigned'] as num?)?.toInt() ?? 0,
+    inProgress: (j['in_progress'] as num?)?.toInt() ?? 0,
+    completed: (j['completed'] as num?)?.toInt() ?? 0,
+    approved: (j['approved'] as num?)?.toInt() ?? 0,
+    revision: (j['revision'] as num?)?.toInt() ?? 0,
+    open: (j['open'] as num?)?.toInt() ?? 0,
+    overdue: (j['overdue'] as num?)?.toInt() ?? 0,
+  );
 }
 
 class AssigneeStat {
@@ -42,12 +43,12 @@ class AssigneeStat {
   double get progress => total == 0 ? 0 : approved / total;
 
   factory AssigneeStat.fromJson(Map<String, dynamic> j) => AssigneeStat(
-        assigneeId: (j['assignee_id'] as num?)?.toInt(),
-        assignee: j['assignee'] as String?,
-        total: (j['total'] as num?)?.toInt() ?? 0,
-        approved: (j['approved'] as num?)?.toInt() ?? 0,
-        overdue: (j['overdue'] as num?)?.toInt() ?? 0,
-      );
+    assigneeId: (j['assignee_id'] as num?)?.toInt(),
+    assignee: j['assignee'] as String?,
+    total: (j['total'] as num?)?.toInt() ?? 0,
+    approved: (j['approved'] as num?)?.toInt() ?? 0,
+    overdue: (j['overdue'] as num?)?.toInt() ?? 0,
+  );
 }
 
 class DashboardSummary {
@@ -66,14 +67,16 @@ class DashboardSummary {
   final List<AssigneeStat> perAssignee;
 
   factory DashboardSummary.fromJson(Map<String, dynamic> j) => DashboardSummary(
-        counts: DashboardCounts.fromJson(j['counts'] as Map<String, dynamic>? ?? const {}),
-        completionRate: (j['completion_rate'] as num?)?.toDouble(),
-        createdInPeriod: (j['created_in_period'] as num?)?.toInt() ?? 0,
-        approvedInPeriod: (j['approved_in_period'] as num?)?.toInt() ?? 0,
-        perAssignee: (j['per_assignee'] as List? ?? const [])
-            .map((e) => AssigneeStat.fromJson(e as Map<String, dynamic>))
-            .toList(),
-      );
+    counts: DashboardCounts.fromJson(
+      j['counts'] as Map<String, dynamic>? ?? const {},
+    ),
+    completionRate: (j['completion_rate'] as num?)?.toDouble(),
+    createdInPeriod: (j['created_in_period'] as num?)?.toInt() ?? 0,
+    approvedInPeriod: (j['approved_in_period'] as num?)?.toInt() ?? 0,
+    perAssignee: (j['per_assignee'] as List? ?? const [])
+        .map((e) => AssigneeStat.fromJson(e as Map<String, dynamic>))
+        .toList(),
+  );
 }
 
 class ActivityEvent {
@@ -98,13 +101,13 @@ class ActivityEvent {
   final DateTime? at;
 
   factory ActivityEvent.fromJson(Map<String, dynamic> j) => ActivityEvent(
-        id: (j['id'] as num).toInt(),
-        taskId: (j['task_id'] as num?)?.toInt(),
-        taskTitle: j['task_title'] as String?,
-        oldStatus: j['old_status'] as String?,
-        newStatus: j['new_status'] as String? ?? '',
-        note: j['note'] as String?,
-        actor: j['actor'] as String?,
-        at: _date(j['at']),
-      );
+    id: (j['id'] as num).toInt(),
+    taskId: (j['task_id'] as num?)?.toInt(),
+    taskTitle: j['task_title'] as String?,
+    oldStatus: j['old_status'] as String?,
+    newStatus: j['new_status'] as String? ?? '',
+    note: j['note'] as String?,
+    actor: j['actor'] as String?,
+    at: _date(j['at']),
+  );
 }

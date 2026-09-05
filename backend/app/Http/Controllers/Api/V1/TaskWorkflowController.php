@@ -2,12 +2,14 @@
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Enums\TaskStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\ReturnTaskRequest;
 use App\Http\Resources\TaskResource;
 use App\Models\Task;
 use App\Services\TaskWorkflowService;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 class TaskWorkflowController extends Controller
 {
@@ -42,6 +44,20 @@ class TaskWorkflowController extends Controller
 
         return $this->respond(
             $this->workflow->returnForRevision($task, $request->user(), $request->string('note')->toString())
+        );
+    }
+
+    /** Admin/manager/creator: force the task to any status, skipping the workflow rules. */
+    public function setStatus(Request $request, Task $task): TaskResource
+    {
+        $this->authorize('review', $task);
+
+        $data = $request->validate([
+            'status' => ['required', Rule::enum(TaskStatus::class)],
+        ]);
+
+        return $this->respond(
+            $this->workflow->override($task, TaskStatus::from($data['status']), $request->user())
         );
     }
 

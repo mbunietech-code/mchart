@@ -43,3 +43,17 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Release signing secrets — never commit. Losing the keystore means you can
+# never publish an update under the same app identity again, so keep a
+# private backup of android/keystore/mchart-release.jks + key.properties
+# somewhere safe outside this repo.
+/android/key.properties
+/android/keystore/
+
+# Windows installer build tooling + outputs (regenerate via windows/installer/)
+/.wix/
+/dist_installer/
+/windows/installer/*.msi
+/windows/installer/*.wixpdb
+/android/build/

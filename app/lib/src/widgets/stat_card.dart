@@ -47,7 +47,9 @@ class StatCard extends StatelessWidget {
                 Expanded(
                   child: Text(
                     caption!,
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(fontSize: 11),
+                    style: Theme.of(
+                      context,
+                    ).textTheme.bodySmall?.copyWith(fontSize: 11),
                   ),
                 ),
               ],
@@ -62,7 +64,9 @@ class StatCard extends StatelessWidget {
                 Expanded(
                   child: Text(
                     footLabel ?? '',
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(fontSize: 11),
+                    style: Theme.of(
+                      context,
+                    ).textTheme.bodySmall?.copyWith(fontSize: 11),
                   ),
                 ),
                 if (footValue != null) footValue!,
@@ -120,7 +124,12 @@ class StatChip extends StatelessWidget {
                   Text(value, style: Theme.of(context).textTheme.titleMedium),
                   if (hint != null) ...[
                     Gap.xs,
-                    Text(hint!, style: Theme.of(context).textTheme.bodySmall?.copyWith(fontSize: 11)),
+                    Text(
+                      hint!,
+                      style: Theme.of(
+                        context,
+                      ).textTheme.bodySmall?.copyWith(fontSize: 11),
+                    ),
                   ],
                 ],
               ),

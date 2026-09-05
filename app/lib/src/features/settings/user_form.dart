@@ -78,7 +78,9 @@ class _UserFormState extends ConsumerState<_UserForm> {
       ref.invalidate(usersProvider);
       if (mounted) Navigator.pop(context);
     } on ApiException catch (e) {
-      setState(() => _error = e.errors?.values.firstOrNull?.firstOrNull ?? e.message);
+      setState(
+        () => _error = e.errors?.values.firstOrNull?.firstOrNull ?? e.message,
+      );
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -96,21 +98,25 @@ class _UserFormState extends ConsumerState<_UserForm> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text(_isEdit ? 'Edit User' : 'Invite New User',
-                style: Theme.of(context).textTheme.titleLarge),
+            Text(
+              _isEdit ? 'Edit User' : 'Invite New User',
+              style: Theme.of(context).textTheme.titleLarge,
+            ),
             Gap.lg,
             TextFormField(
               controller: _name,
               decoration: const InputDecoration(labelText: 'Full name'),
-              validator: (v) => (v == null || v.trim().isEmpty) ? 'Enter a name' : null,
+              validator: (v) =>
+                  (v == null || v.trim().isEmpty) ? 'Enter a name' : null,
             ),
             Gap.md,
             TextFormField(
               controller: _email,
               keyboardType: TextInputType.emailAddress,
               decoration: const InputDecoration(labelText: 'Email'),
-              validator: (v) =>
-                  (v == null || !v.contains('@')) ? 'Enter a valid email address' : null,
+              validator: (v) => (v == null || !v.contains('@'))
+                  ? 'Enter a valid email address'
+                  : null,
             ),
             Gap.md,
             TextFormField(
@@ -128,7 +134,8 @@ class _UserFormState extends ConsumerState<_UserForm> {
                       for (final r in UserRole.values)
                         DropdownMenuItem(value: r, child: Text(r.label)),
                     ],
-                    onChanged: (v) => setState(() => _role = v ?? UserRole.staff),
+                    onChanged: (v) =>
+                        setState(() => _role = v ?? UserRole.staff),
                   ),
                 ),
                 Gap.md,
@@ -137,9 +144,14 @@ class _UserFormState extends ConsumerState<_UserForm> {
                     data: (list) => DropdownButtonFormField<int?>(
                       initialValue: _departmentId,
                       isExpanded: true,
-                      decoration: const InputDecoration(labelText: 'Department'),
+                      decoration: const InputDecoration(
+                        labelText: 'Department',
+                      ),
                       items: [
-                        const DropdownMenuItem(value: null, child: Text('None')),
+                        const DropdownMenuItem(
+                          value: null,
+                          child: Text('None'),
+                        ),
                         for (final d in list)
                           DropdownMenuItem(value: d.id, child: Text(d.name)),
                       ],
@@ -155,16 +167,23 @@ class _UserFormState extends ConsumerState<_UserForm> {
               controller: _password,
               obscureText: true,
               decoration: InputDecoration(
-                labelText: _isEdit ? 'New password (optional)' : 'Initial password',
+                labelText: _isEdit
+                    ? 'New password (optional)'
+                    : 'Initial password',
               ),
               validator: (v) {
                 if (_isEdit) return null;
-                return (v == null || v.length < 8) ? 'At least 8 characters' : null;
+                return (v == null || v.length < 8)
+                    ? 'At least 8 characters'
+                    : null;
               },
             ),
             if (_error != null) ...[
               Gap.md,
-              Text(_error!, style: const TextStyle(color: Colors.red, fontSize: 12)),
+              Text(
+                _error!,
+                style: const TextStyle(color: Colors.red, fontSize: 12),
+              ),
             ],
             Gap.xl,
             Row(
@@ -177,7 +196,9 @@ class _UserFormState extends ConsumerState<_UserForm> {
                 Gap.sm,
                 FilledButton(
                   onPressed: _busy ? null : _submit,
-                  child: Text(_busy ? 'Saving...' : (_isEdit ? 'Save' : 'Invite')),
+                  child: Text(
+                    _busy ? 'Saving...' : (_isEdit ? 'Save' : 'Invite'),
+                  ),
                 ),
               ],
             ),

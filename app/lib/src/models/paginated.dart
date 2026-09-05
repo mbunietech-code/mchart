@@ -33,8 +33,7 @@ class Paginated<T> {
   static List<T> listOf<T>(
     Map<String, dynamic> json,
     T Function(Map<String, dynamic>) fromItem,
-  ) =>
-      (json['data'] as List? ?? const [])
-          .map((e) => fromItem(e as Map<String, dynamic>))
-          .toList();
+  ) => (json['data'] as List? ?? const [])
+      .map((e) => fromItem(e as Map<String, dynamic>))
+      .toList();
 }

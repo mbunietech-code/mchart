@@ -58,6 +58,44 @@ class TaskWorkflowService
         ));
     }
 
+    /**
+     * Admin/manager/creator override — jump straight to any status, skipping
+     * the normal transition rules. Still recorded in task_status_history and
+     * still fires the status-changed event.
+     */
+    public function override(Task $task, TaskStatus $target, User $actor): Task
+    {
+        $from = $task->status;
+        if ($from === $target) {
+            return $task;
+        }
+
+        DB::transaction(function () use ($task, $from, $target, $actor) {
+            $task->status = $target;
+            if ($target === TaskStatus::InProgress) {
+                $task->started_at ??= now();
+            } elseif ($target === TaskStatus::Completed) {
+                $task->completed_at = now();
+            } elseif ($target === TaskStatus::Approved) {
+                $task->approved_at = now();
+            }
+            $task->save();
+
+            $task->statusHistory()->create([
+                'old_status' => $from->value,
+                'new_status' => $target->value,
+                'changed_by' => $actor->id,
+                'note' => "Status set by {$actor->name} (override)",
+                'changed_at' => now(),
+            ]);
+        });
+
+        $task->refresh();
+        event(new TaskStatusChanged($task, $from->value, $target->value));
+
+        return $task;
+    }
+
     public function returnForRevision(Task $task, User $actor, string $note): Task
     {
         return $this->transition($task, TaskStatus::Revision, $actor, function () use ($task, $actor, $note) {

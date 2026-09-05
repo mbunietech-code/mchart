@@ -21,19 +21,38 @@ class StatusPill extends StatelessWidget {
   final bool dot;
   final bool dense;
 
-  factory StatusPill.success(String label, {IconData? icon}) =>
-      StatusPill(label, color: AppColor.success, background: AppColor.successSoft, icon: icon);
-  factory StatusPill.warning(String label, {IconData? icon}) =>
-      StatusPill(label, color: AppColor.warning, background: AppColor.warningSoft, icon: icon);
-  factory StatusPill.danger(String label, {IconData? icon}) =>
-      StatusPill(label, color: AppColor.danger, background: AppColor.dangerSoft, icon: icon);
-  factory StatusPill.brand(String label, {IconData? icon}) =>
-      StatusPill(label, color: AppColor.brand, background: AppColor.brandSoft, icon: icon);
+  factory StatusPill.success(String label, {IconData? icon}) => StatusPill(
+    label,
+    color: AppColor.success,
+    background: AppColor.successSoft,
+    icon: icon,
+  );
+  factory StatusPill.warning(String label, {IconData? icon}) => StatusPill(
+    label,
+    color: AppColor.warning,
+    background: AppColor.warningSoft,
+    icon: icon,
+  );
+  factory StatusPill.danger(String label, {IconData? icon}) => StatusPill(
+    label,
+    color: AppColor.danger,
+    background: AppColor.dangerSoft,
+    icon: icon,
+  );
+  factory StatusPill.brand(String label, {IconData? icon}) => StatusPill(
+    label,
+    color: AppColor.brand,
+    background: AppColor.brandSoft,
+    icon: icon,
+  );
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: dense ? 7 : 9, vertical: dense ? 2 : 4),
+      padding: EdgeInsets.symmetric(
+        horizontal: dense ? 7 : 9,
+        vertical: dense ? 2 : 4,
+      ),
       decoration: BoxDecoration(
         color: background ?? color.withValues(alpha: 0.12),
         borderRadius: const BorderRadius.all(Radius.circular(999)),
@@ -70,18 +89,23 @@ class StatusPill extends StatelessWidget {
 
 /// Green / grey "live" indicator with a pulsing dot.
 class LivePill extends StatelessWidget {
-  const LivePill({super.key, required this.online, this.onlineLabel = 'Live', this.offlineLabel = 'Offline'});
+  const LivePill({
+    super.key,
+    required this.online,
+    this.onlineLabel = 'Live',
+    this.offlineLabel = 'Offline',
+  });
   final bool online;
   final String onlineLabel;
   final String offlineLabel;
 
   @override
   Widget build(BuildContext context) => StatusPill(
-        online ? onlineLabel : offlineLabel,
-        color: online ? AppColor.success : AppColor.textMuted,
-        background: online ? AppColor.successSoft : AppColor.surfaceMuted,
-        dot: true,
-      );
+    online ? onlineLabel : offlineLabel,
+    color: online ? AppColor.success : AppColor.textMuted,
+    background: online ? AppColor.successSoft : AppColor.surfaceMuted,
+    dot: true,
+  );
 }
 
 /// Up/down trend chip ("↗ +8%").
@@ -117,10 +141,17 @@ class CountBadge extends StatelessWidget {
       height: 18,
       padding: const EdgeInsets.symmetric(horizontal: 5),
       alignment: Alignment.center,
-      decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(999)),
+      decoration: BoxDecoration(
+        color: color,
+        borderRadius: BorderRadius.circular(999),
+      ),
       child: Text(
         count > 99 ? '99+' : '$count',
-        style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w700),
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: 11,
+          fontWeight: FontWeight.w700,
+        ),
       ),
     );
   }

@@ -38,7 +38,7 @@ class TasksScreen extends ConsumerWidget {
         Padding(
           padding: const EdgeInsets.fromLTRB(28, 22, 28, 12),
           child: PageHeader(
-            breadcrumb: 'MbuniTech • Task Management',
+            breadcrumb: 'Mbunietech • Task Management',
             title: 'Task Board',
             subtitle:
                 'Track every task from assignment to approval — with priority, deadlines and attachments.',
@@ -50,8 +50,9 @@ class TasksScreen extends ConsumerWidget {
                     hintText: 'Search tasks...',
                     prefixIcon: Icon(Icons.search_rounded, size: 18),
                   ),
-                  onChanged: (v) => ref.read(taskFilterProvider.notifier).state =
-                      filter.copyWith(search: v),
+                  onChanged: (v) =>
+                      ref.read(taskFilterProvider.notifier).state = filter
+                          .copyWith(search: v),
                 ),
               ),
               _ToggleChip(
@@ -95,7 +96,9 @@ class TasksScreen extends ConsumerWidget {
                       for (final status in _columns) ...[
                         _Column(
                           status: status,
-                          tasks: tasks.where((t) => t.status == status).toList(),
+                          tasks: tasks
+                              .where((t) => t.status == status)
+                              .toList(),
                         ),
                         Gap.lg,
                       ],
@@ -112,7 +115,11 @@ class TasksScreen extends ConsumerWidget {
 }
 
 class _ToggleChip extends StatelessWidget {
-  const _ToggleChip({required this.label, required this.active, required this.onTap});
+  const _ToggleChip({
+    required this.label,
+    required this.active,
+    required this.onTap,
+  });
   final String label;
   final bool active;
   final VoidCallback onTap;
@@ -123,7 +130,9 @@ class _ToggleChip extends StatelessWidget {
       onPressed: onTap,
       style: OutlinedButton.styleFrom(
         backgroundColor: active ? AppColor.brandSoft : AppColor.surface,
-        side: BorderSide(color: active ? AppColor.brand : AppColor.borderStrong),
+        side: BorderSide(
+          color: active ? AppColor.brand : AppColor.borderStrong,
+        ),
         foregroundColor: active ? AppColor.brand : AppColor.textPrimary,
       ),
       child: Text(label),
@@ -148,14 +157,21 @@ class _Column extends StatelessWidget {
               Container(
                 width: 8,
                 height: 8,
-                decoration: BoxDecoration(color: status.color, shape: BoxShape.circle),
+                decoration: BoxDecoration(
+                  color: status.color,
+                  shape: BoxShape.circle,
+                ),
               ),
               Gap.sm,
               Text(status.label, style: Theme.of(context).textTheme.titleSmall),
               Gap.sm,
-              Text('${tasks.length}',
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      fontWeight: FontWeight.w700, color: AppColor.textMuted)),
+              Text(
+                '${tasks.length}',
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  fontWeight: FontWeight.w700,
+                  color: AppColor.textMuted,
+                ),
+              ),
             ],
           ),
           Gap.md,
@@ -165,17 +181,21 @@ class _Column extends StatelessWidget {
               alignment: Alignment.center,
               decoration: BoxDecoration(
                 borderRadius: AppRadius.lg,
-                border: Border.all(color: AppColor.border, style: BorderStyle.solid),
+                border: Border.all(
+                  color: AppColor.border,
+                  style: BorderStyle.solid,
+                ),
                 color: AppColor.surfaceMuted,
               ),
-              child: Text('None',
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppColor.textMuted)),
+              child: Text(
+                'None',
+                style: Theme.of(
+                  context,
+                ).textTheme.bodySmall?.copyWith(color: AppColor.textMuted),
+              ),
             )
           else
-            for (final task in tasks) ...[
-              _TaskCard(task: task),
-              Gap.md,
-            ],
+            for (final task in tasks) ...[_TaskCard(task: task), Gap.md],
         ],
       ),
     );
@@ -203,21 +223,33 @@ class _TaskCard extends StatelessWidget {
                 dense: true,
               ),
               const Spacer(),
-              Text('#TASK-${task.id}',
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(fontSize: 11)),
+              Text(
+                '#TASK-${task.id}',
+                style: Theme.of(
+                  context,
+                ).textTheme.bodySmall?.copyWith(fontSize: 11),
+              ),
             ],
           ),
           Gap.sm,
-          Text(task.title,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              style: Theme.of(context).textTheme.titleSmall?.copyWith(height: 1.3)),
+          Text(
+            task.title,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: Theme.of(
+              context,
+            ).textTheme.titleSmall?.copyWith(height: 1.3),
+          ),
           if (task.description != null && task.description!.isNotEmpty) ...[
             Gap.xs,
-            Text(task.description!,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(fontSize: 11.5)),
+            Text(
+              task.description!,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: Theme.of(
+                context,
+              ).textTheme.bodySmall?.copyWith(fontSize: 11.5),
+            ),
           ],
           Gap.md,
           Row(
@@ -226,37 +258,64 @@ class _TaskCard extends StatelessWidget {
                 AppAvatar.forUser(task.assignee!, size: 22),
               Gap.sm,
               Expanded(
-                child: Text(task.assignee?.name ?? 'Unassigned',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(fontSize: 11.5)),
+                child: Text(
+                  task.assignee?.name ?? 'Unassigned',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodySmall?.copyWith(fontSize: 11.5),
+                ),
               ),
               if (task.deadline != null)
                 StatusPill(
                   Fmt.deadline(task.deadline),
-                  color: task.isOverdue ? AppColor.danger : AppColor.textSecondary,
-                  background: task.isOverdue ? AppColor.dangerSoft : AppColor.surfaceMuted,
+                  color: task.isOverdue
+                      ? AppColor.danger
+                      : AppColor.textSecondary,
+                  background: task.isOverdue
+                      ? AppColor.dangerSoft
+                      : AppColor.surfaceMuted,
                   icon: Icons.schedule_rounded,
                   dense: true,
                 ),
             ],
           ),
-          if ((task.commentsCount ?? 0) > 0 || (task.attachmentsCount ?? 0) > 0) ...[
+          if ((task.commentsCount ?? 0) > 0 ||
+              (task.attachmentsCount ?? 0) > 0) ...[
             Gap.sm,
             Row(
               children: [
                 if ((task.commentsCount ?? 0) > 0) ...[
-                  const Icon(Icons.mode_comment_outlined, size: 13, color: AppColor.textMuted),
+                  const Icon(
+                    Icons.mode_comment_outlined,
+                    size: 13,
+                    color: AppColor.textMuted,
+                  ),
                   const SizedBox(width: 3),
-                  Text('${task.commentsCount}',
-                      style: const TextStyle(fontSize: 11, color: AppColor.textMuted)),
+                  Text(
+                    '${task.commentsCount}',
+                    style: const TextStyle(
+                      fontSize: 11,
+                      color: AppColor.textMuted,
+                    ),
+                  ),
                   Gap.md,
                 ],
                 if ((task.attachmentsCount ?? 0) > 0) ...[
-                  const Icon(Icons.attach_file_rounded, size: 13, color: AppColor.textMuted),
+                  const Icon(
+                    Icons.attach_file_rounded,
+                    size: 13,
+                    color: AppColor.textMuted,
+                  ),
                   const SizedBox(width: 3),
-                  Text('${task.attachmentsCount}',
-                      style: const TextStyle(fontSize: 11, color: AppColor.textMuted)),
+                  Text(
+                    '${task.attachmentsCount}',
+                    style: const TextStyle(
+                      fontSize: 11,
+                      color: AppColor.textMuted,
+                    ),
+                  ),
                 ],
               ],
             ),

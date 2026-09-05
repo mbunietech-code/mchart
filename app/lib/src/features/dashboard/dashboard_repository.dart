@@ -9,24 +9,27 @@ class DashboardRepository {
   final ApiClient _api;
 
   Future<DashboardSummary> summary({int? departmentId}) async {
-    final json = await _api.get<Map<String, dynamic>>('/dashboard/summary', query: {
-      if (departmentId != null) 'department_id': departmentId,
-    });
+    final json = await _api.get<Map<String, dynamic>>(
+      '/dashboard/summary',
+      query: {if (departmentId != null) 'department_id': departmentId},
+    );
     return DashboardSummary.fromJson(json);
   }
 
   Future<List<ActivityEvent>> activity({int limit = 30}) async {
-    final json = await _api.get<Map<String, dynamic>>('/dashboard/activity', query: {
-      'limit': limit,
-    });
+    final json = await _api.get<Map<String, dynamic>>(
+      '/dashboard/activity',
+      query: {'limit': limit},
+    );
     return (json['data'] as List? ?? const [])
         .map((e) => ActivityEvent.fromJson(e as Map<String, dynamic>))
         .toList();
   }
 }
 
-final dashboardRepositoryProvider =
-    Provider((ref) => DashboardRepository(ref.watch(apiClientProvider)));
+final dashboardRepositoryProvider = Provider(
+  (ref) => DashboardRepository(ref.watch(apiClientProvider)),
+);
 
 final dashboardDepartmentProvider = StateProvider<int?>((ref) => null);
 

@@ -14,7 +14,10 @@ class NotificationsState {
   int get unread => items.where((n) => !n.isRead).length;
 
   NotificationsState copyWith({List<AppNotification>? items, bool? loading}) =>
-      NotificationsState(items: items ?? this.items, loading: loading ?? this.loading);
+      NotificationsState(
+        items: items ?? this.items,
+        loading: loading ?? this.loading,
+      );
 }
 
 class NotificationsController extends StateNotifier<NotificationsState> {
@@ -30,7 +33,10 @@ class NotificationsController extends StateNotifier<NotificationsState> {
 
   Future<void> _load() async {
     try {
-      final json = await _api.get<Map<String, dynamic>>('/notifications', query: {'per_page': 40});
+      final json = await _api.get<Map<String, dynamic>>(
+        '/notifications',
+        query: {'per_page': 40},
+      );
       final items = (json['data'] as List? ?? const [])
           .map((e) => AppNotification.fromJson(e as Map<String, dynamic>))
           .toList();
@@ -55,7 +61,9 @@ class NotificationsController extends StateNotifier<NotificationsState> {
 
   Future<void> markRead(int id) async {
     state = state.copyWith(
-      items: [for (final n in state.items) n.id == id ? n.copyWith(isRead: true) : n],
+      items: [
+        for (final n in state.items) n.id == id ? n.copyWith(isRead: true) : n,
+      ],
     );
     try {
       await _api.post('/notifications/$id/read');
@@ -63,7 +71,9 @@ class NotificationsController extends StateNotifier<NotificationsState> {
   }
 
   Future<void> markAllRead() async {
-    state = state.copyWith(items: [for (final n in state.items) n.copyWith(isRead: true)]);
+    state = state.copyWith(
+      items: [for (final n in state.items) n.copyWith(isRead: true)],
+    );
     try {
       await _api.post('/notifications/read-all');
     } catch (_) {}
@@ -78,5 +88,5 @@ class NotificationsController extends StateNotifier<NotificationsState> {
 
 final notificationsControllerProvider =
     StateNotifierProvider<NotificationsController, NotificationsState>((ref) {
-  return NotificationsController(ref);
-});
+      return NotificationsController(ref);
+    });

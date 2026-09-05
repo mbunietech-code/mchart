@@ -22,17 +22,24 @@ abstract final class Env {
     'MCHART_REVERB_HOST',
     defaultValue: 'localhost',
   );
-  static const reverbPort = int.fromEnvironment('MCHART_REVERB_PORT', defaultValue: 8080);
+  static const reverbPort = int.fromEnvironment(
+    'MCHART_REVERB_PORT',
+    defaultValue: 8080,
+  );
   static const reverbScheme = String.fromEnvironment(
     'MCHART_REVERB_SCHEME',
     defaultValue: 'ws',
   );
 
   static Uri get reverbUri => Uri(
-        scheme: reverbScheme,
-        host: reverbHost,
-        port: reverbPort,
-        path: '/app/$reverbKey',
-        queryParameters: {'protocol': '7', 'client': 'mchart-flutter', 'version': '1.0'},
-      );
+    scheme: reverbScheme,
+    host: reverbHost,
+    port: reverbPort,
+    path: '/app/$reverbKey',
+    queryParameters: {
+      'protocol': '7',
+      'client': 'mchart-flutter',
+      'version': '1.0',
+    },
+  );
 }

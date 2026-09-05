@@ -31,7 +31,9 @@ class _TaskForm extends ConsumerStatefulWidget {
 class _TaskFormState extends ConsumerState<_TaskForm> {
   final _formKey = GlobalKey<FormState>();
   late final _title = TextEditingController(text: widget.task?.title);
-  late final _description = TextEditingController(text: widget.task?.description);
+  late final _description = TextEditingController(
+    text: widget.task?.description,
+  );
   late TaskPriority _priority = widget.task?.priority ?? TaskPriority.medium;
   late DateTime? _deadline = widget.task?.deadline;
   late int? _assigneeId = widget.task?.assignee?.id;
@@ -49,7 +51,11 @@ class _TaskFormState extends ConsumerState<_TaskForm> {
 
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate() || _assigneeId == null) {
-      setState(() => _error = _assigneeId == null ? 'Choose who this task is assigned to.' : null);
+      setState(
+        () => _error = _assigneeId == null
+            ? 'Choose who this task is assigned to.'
+            : null,
+      );
       return;
     }
     setState(() {
@@ -92,19 +98,24 @@ class _TaskFormState extends ConsumerState<_TaskForm> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text(_isEdit ? 'Edit Task' : 'New Task',
-                style: Theme.of(context).textTheme.titleLarge),
+            Text(
+              _isEdit ? 'Edit Task' : 'New Task',
+              style: Theme.of(context).textTheme.titleLarge,
+            ),
             Gap.lg,
             TextFormField(
               controller: _title,
               decoration: const InputDecoration(labelText: 'Task title'),
-              validator: (v) => (v == null || v.trim().isEmpty) ? 'Enter a title' : null,
+              validator: (v) =>
+                  (v == null || v.trim().isEmpty) ? 'Enter a title' : null,
             ),
             Gap.md,
             TextFormField(
               controller: _description,
               maxLines: 3,
-              decoration: const InputDecoration(labelText: 'Description (optional)'),
+              decoration: const InputDecoration(
+                labelText: 'Description (optional)',
+              ),
             ),
             Gap.md,
             Row(
@@ -117,7 +128,8 @@ class _TaskFormState extends ConsumerState<_TaskForm> {
                       for (final p in TaskPriority.values)
                         DropdownMenuItem(value: p, child: Text(p.label)),
                     ],
-                    onChanged: (v) => setState(() => _priority = v ?? TaskPriority.medium),
+                    onChanged: (v) =>
+                        setState(() => _priority = v ?? TaskPriority.medium),
                   ),
                 ),
                 Gap.md,
@@ -126,7 +138,9 @@ class _TaskFormState extends ConsumerState<_TaskForm> {
                     onTap: () async {
                       final picked = await showDatePicker(
                         context: context,
-                        initialDate: _deadline ?? DateTime.now().add(const Duration(days: 3)),
+                        initialDate:
+                            _deadline ??
+                            DateTime.now().add(const Duration(days: 3)),
                         firstDate: DateTime.now(),
                         lastDate: DateTime.now().add(const Duration(days: 365)),
                       );
@@ -154,14 +168,20 @@ class _TaskFormState extends ConsumerState<_TaskForm> {
                 decoration: const InputDecoration(labelText: 'Assignee'),
                 items: [
                   for (final u in page.items)
-                    DropdownMenuItem(value: u.id, child: Text('${u.name} · ${u.role.label}')),
+                    DropdownMenuItem(
+                      value: u.id,
+                      child: Text('${u.name} · ${u.role.label}'),
+                    ),
                 ],
                 onChanged: (v) => setState(() => _assigneeId = v),
               ),
             ),
             if (_error != null) ...[
               Gap.md,
-              Text(_error!, style: const TextStyle(color: Colors.red, fontSize: 12)),
+              Text(
+                _error!,
+                style: const TextStyle(color: Colors.red, fontSize: 12),
+              ),
             ],
             Gap.xl,
             Row(
@@ -174,7 +194,9 @@ class _TaskFormState extends ConsumerState<_TaskForm> {
                 Gap.sm,
                 FilledButton(
                   onPressed: _busy ? null : _submit,
-                  child: Text(_busy ? 'Saving...' : (_isEdit ? 'Save' : 'Create')),
+                  child: Text(
+                    _busy ? 'Saving...' : (_isEdit ? 'Save' : 'Create'),
+                  ),
                 ),
               ],
             ),

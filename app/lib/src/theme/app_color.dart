@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-/// MChart brand palette — sourced from the MbuniTech design system
+/// MChart brand palette — sourced from the Mbunietech design system
 /// (DESIGN.md). Do not invent new brand colors; extend semantic tokens here
 /// only when the design system defines them.
 abstract final class AppColor {
@@ -14,13 +14,17 @@ abstract final class AppColor {
   static const navy = Color(0xFF0F172A);
   static const navySoft = Color(0xFFE8EBF0);
 
-  static const accent = Color(0xFFF59E0B); // amber — medium-priority / pending review
+  static const accent = Color(
+    0xFFF59E0B,
+  ); // amber — medium-priority / pending review
   static const accentSoft = Color(0xFFFEFCE8);
 
   static const slate = Color(0xFF64748B);
 
   // ----- Surfaces --------------------------------------------------
-  static const canvas = Color(0xFFF8FAFC); // surface-page — app shell background
+  static const canvas = Color(
+    0xFFF8FAFC,
+  ); // surface-page — app shell background
   static const surface = Color(0xFFFFFFFF); // surface-card
   static const surfaceMuted = Color(0xFFF1F5F9); // surface-subtle
   static const sidebar = Color(0xFFFFFFFF);

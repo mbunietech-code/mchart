@@ -39,7 +39,9 @@ class _AppShellState extends ConsumerState<AppShell> {
 
   void _openNotifications() {
     final box = _bellKey.currentContext!.findRenderObject() as RenderBox;
-    final offset = box.localToGlobal(Offset(box.size.width, box.size.height + 8));
+    final offset = box.localToGlobal(
+      Offset(box.size.width, box.size.height + 8),
+    );
     showNotificationsPanel(context, anchor: offset);
   }
 
@@ -50,22 +52,155 @@ class _AppShellState extends ConsumerState<AppShell> {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        if (constraints.maxWidth < AppLayout.mobileBreakpoint) {
+          return _MobileShell(
+            user: user,
+            bellKey: _bellKey,
+            onBell: _openNotifications,
+            child: widget.child,
+          );
+        }
+        return Scaffold(
+          backgroundColor: AppColor.canvas,
+          body: Row(
+            children: [
+              _Sidebar(user: user),
+              Expanded(
+                child: Column(
+                  children: [
+                    _TopBar(bellKey: _bellKey, onBell: _openNotifications),
+                    const Divider(height: 1),
+                    Expanded(child: widget.child),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Mobile shell — top bar + bottom nav instead of the desktop sidebar, once
+// the screen is too narrow for both the sidebar and real content.
+// ---------------------------------------------------------------------------
+
+class _MobileDestination {
+  const _MobileDestination(this.path, this.icon, this.label);
+  final String path;
+  final IconData icon;
+  final String label;
+}
+
+class _MobileShell extends ConsumerWidget {
+  const _MobileShell({
+    required this.user,
+    required this.bellKey,
+    required this.onBell,
+    required this.child,
+  });
+
+  final User user;
+  final Key bellKey;
+  final VoidCallback onBell;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final location = GoRouterState.of(context).matchedLocation;
+    final unread = ref.watch(
+      notificationsControllerProvider.select((s) => s.unread),
+    );
+
+    final destinations = <_MobileDestination>[
+      const _MobileDestination('/chats', Icons.forum_outlined, 'Chats'),
+      const _MobileDestination('/tasks', Icons.checklist_rounded, 'Tasks'),
+      if (user.role.isManagerOrAdmin)
+        const _MobileDestination(
+          '/dashboard',
+          Icons.space_dashboard_outlined,
+          'Dashboard',
+        ),
+      if (user.isAdmin)
+        const _MobileDestination(
+          '/settings',
+          Icons.settings_outlined,
+          'Settings',
+        ),
+    ];
+    var selectedIndex = destinations.indexWhere(
+      (d) => location.startsWith(d.path),
+    );
+    if (selectedIndex < 0) selectedIndex = 0;
+
     return Scaffold(
       backgroundColor: AppColor.canvas,
-      body: Row(
-        children: [
-          _Sidebar(user: user),
-          Expanded(
-            child: Column(
-              children: [
-                _TopBar(bellKey: _bellKey, onBell: _openNotifications),
-                const Divider(height: 1),
-                Expanded(child: widget.child),
-              ],
+      appBar: AppBar(
+        backgroundColor: AppColor.surface,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        titleSpacing: 12,
+        title: Row(
+          children: [
+            const MChartLogo(size: 28),
+            Gap.sm,
+            Text(
+              'MChart',
+              style: Theme.of(
+                context,
+              ).textTheme.titleMedium?.copyWith(fontSize: 15),
             ),
+          ],
+        ),
+        actions: [
+          _IconButton(
+            key: bellKey,
+            icon: Icons.notifications_none_rounded,
+            badge: unread,
+            onTap: onBell,
           ),
+          Gap.sm,
+          _MobileUserButton(user: user),
+          Gap.md,
         ],
       ),
+      body: child,
+      bottomNavigationBar: NavigationBar(
+        selectedIndex: selectedIndex,
+        onDestinationSelected: (i) => context.go(destinations[i].path),
+        destinations: [
+          for (final d in destinations)
+            NavigationDestination(icon: Icon(d.icon), label: d.label),
+        ],
+      ),
+    );
+  }
+}
+
+class _MobileUserButton extends ConsumerWidget {
+  const _MobileUserButton({required this.user});
+  final User user;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return PopupMenuButton<String>(
+      position: PopupMenuPosition.under,
+      onSelected: (v) {
+        if (v == 'logout') ref.read(authControllerProvider.notifier).logout();
+      },
+      itemBuilder: (context) => [
+        PopupMenuItem(
+          enabled: false,
+          child: Text(user.email, style: Theme.of(context).textTheme.bodySmall),
+        ),
+        const PopupMenuDivider(),
+        const PopupMenuItem(value: 'logout', child: Text('Sign out')),
+      ],
+      child: AppAvatar.forUser(user, size: 30),
     );
   }
 }
@@ -84,7 +219,9 @@ class _Sidebar extends ConsumerWidget {
     final unread = ref.watch(
       notificationsControllerProvider.select((s) => s.unread),
     );
-    final channelUnread = ref.watch(conversationsProvider).maybeWhen(
+    final channelUnread = ref
+        .watch(conversationsProvider)
+        .maybeWhen(
           data: (list) => list.fold<int>(0, (sum, c) => sum + c.unreadCount),
           orElse: () => 0,
         );
@@ -107,10 +244,18 @@ class _Sidebar extends ConsumerWidget {
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('MChart',
-                        style: Theme.of(context).textTheme.titleMedium?.copyWith(fontSize: 15)),
-                    Text('MbuniTech Work',
-                        style: Theme.of(context).textTheme.labelSmall?.copyWith(letterSpacing: 0.2)),
+                    Text(
+                      'MChart',
+                      style: Theme.of(
+                        context,
+                      ).textTheme.titleMedium?.copyWith(fontSize: 15),
+                    ),
+                    Text(
+                      'Mbunietech Work',
+                      style: Theme.of(
+                        context,
+                      ).textTheme.labelSmall?.copyWith(letterSpacing: 0.2),
+                    ),
                   ],
                 ),
               ],
@@ -118,8 +263,10 @@ class _Sidebar extends ConsumerWidget {
           ),
           Padding(
             padding: const EdgeInsets.fromLTRB(20, 6, 16, 8),
-            child: Text('WORKSPACE',
-                style: Theme.of(context).textTheme.labelSmall),
+            child: Text(
+              'WORKSPACE',
+              style: Theme.of(context).textTheme.labelSmall,
+            ),
           ),
           _NavItem(
             icon: Icons.forum_outlined,
@@ -155,12 +302,13 @@ class _Sidebar extends ConsumerWidget {
                     width: 8,
                     height: 8,
                     decoration: const BoxDecoration(
-                        color: AppColor.warning, shape: BoxShape.circle),
+                      color: AppColor.warning,
+                      shape: BoxShape.circle,
+                    ),
                   )
                 : null,
             onTap: () {
-              final bell = context
-                  .findAncestorStateOfType<_AppShellState>();
+              final bell = context.findAncestorStateOfType<_AppShellState>();
               bell?._openNotifications();
             },
           ),
@@ -210,9 +358,11 @@ class _NavItem extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
             child: Row(
               children: [
-                Icon(icon,
-                    size: 19,
-                    color: active ? Colors.white : AppColor.textSecondary),
+                Icon(
+                  icon,
+                  size: 19,
+                  color: active ? Colors.white : AppColor.textSecondary,
+                ),
                 Gap.md,
                 Expanded(
                   child: Text(
@@ -264,16 +414,19 @@ class _UserCard extends ConsumerWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(user.name,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: Theme.of(context).textTheme.titleSmall),
+                  Text(
+                    user.name,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context).textTheme.titleSmall,
+                  ),
                   Text(
                     user.role.label,
                     style: const TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w600,
-                        color: AppColor.warning),
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                      color: AppColor.warning,
+                    ),
                   ),
                 ],
               ),
@@ -297,12 +450,12 @@ class _TopBar extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final connected = ref.watch(realtimeConnectedProvider).maybeWhen(
-          data: (v) => v,
-          orElse: () => false,
-        );
-    final unread =
-        ref.watch(notificationsControllerProvider.select((s) => s.unread));
+    final connected = ref
+        .watch(realtimeConnectedProvider)
+        .maybeWhen(data: (v) => v, orElse: () => false);
+    final unread = ref.watch(
+      notificationsControllerProvider.select((s) => s.unread),
+    );
     final user = ref.watch(currentUserProvider)!;
 
     return Container(
@@ -312,16 +465,21 @@ class _TopBar extends ConsumerWidget {
       child: Row(
         children: [
           Flexible(
-            child: Text('MbuniTech Enterprise Network',
-                overflow: TextOverflow.ellipsis,
-                style: Theme.of(context).textTheme.titleMedium),
+            child: Text(
+              'Mbunietech Enterprise Network',
+              overflow: TextOverflow.ellipsis,
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
           ),
           Gap.md,
           StatusPill(
             !Env.realtimeEnabled || connected ? 'Operational' : 'Reconnecting',
-            color: !Env.realtimeEnabled || connected ? AppColor.success : AppColor.warning,
-            background:
-                !Env.realtimeEnabled || connected ? AppColor.successSoft : AppColor.warningSoft,
+            color: !Env.realtimeEnabled || connected
+                ? AppColor.success
+                : AppColor.warning,
+            background: !Env.realtimeEnabled || connected
+                ? AppColor.successSoft
+                : AppColor.warningSoft,
             dot: true,
           ),
           const Spacer(),
@@ -371,7 +529,12 @@ class _SearchField extends StatelessWidget {
 }
 
 class _IconButton extends StatelessWidget {
-  const _IconButton({super.key, required this.icon, required this.onTap, this.badge = 0});
+  const _IconButton({
+    super.key,
+    required this.icon,
+    required this.onTap,
+    this.badge = 0,
+  });
   final IconData icon;
   final VoidCallback onTap;
   final int badge;

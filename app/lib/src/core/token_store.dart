@@ -9,11 +9,11 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 /// session — the user stays signed in for this run but is asked to log in
 /// again after a full page reload — rather than aborting the sign-in.
 class TokenStore {
+  // flutter_secure_storage 11's default AndroidOptions() already uses
+  // AES-GCM with RSA OAEP key wrapping — stronger than the old
+  // encryptedSharedPreferences flag this replaced, so no options needed.
   TokenStore([FlutterSecureStorage? storage])
-      : _storage = storage ??
-            const FlutterSecureStorage(
-              aOptions: AndroidOptions(encryptedSharedPreferences: true),
-            );
+    : _storage = storage ?? const FlutterSecureStorage();
 
   static const _key = 'mchart.token';
   final FlutterSecureStorage _storage;
@@ -36,7 +36,9 @@ class TokenStore {
     try {
       await _storage.write(key: _key, value: token);
     } catch (e) {
-      debugPrint('TokenStore.save failed; continuing with an in-memory session: $e');
+      debugPrint(
+        'TokenStore.save failed; continuing with an in-memory session: $e',
+      );
     }
   }
 

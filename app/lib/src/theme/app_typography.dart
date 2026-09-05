@@ -7,7 +7,12 @@ import 'app_color.dart';
 /// stack renders (Segoe UI / SF Pro / Roboto) which is visually close.
 abstract final class AppType {
   static const fontFamily = 'Inter';
-  static const _fallback = <String>['Segoe UI', 'SF Pro Text', 'Roboto', 'sans-serif'];
+  static const _fallback = <String>[
+    'Segoe UI',
+    'SF Pro Text',
+    'Roboto',
+    'sans-serif',
+  ];
 
   static TextTheme textTheme(TextTheme base) {
     final t = base.apply(
@@ -18,28 +23,57 @@ abstract final class AppType {
     );
     return t.copyWith(
       displaySmall: t.displaySmall?.copyWith(
-        fontSize: 24, fontWeight: FontWeight.w700, letterSpacing: -0.4, color: AppColor.textPrimary,
+        fontSize: 24,
+        fontWeight: FontWeight.w700,
+        letterSpacing: -0.4,
+        color: AppColor.textPrimary,
       ),
       headlineSmall: t.headlineSmall?.copyWith(
-        fontSize: 20, fontWeight: FontWeight.w700, letterSpacing: -0.3, color: AppColor.textPrimary,
+        fontSize: 20,
+        fontWeight: FontWeight.w700,
+        letterSpacing: -0.3,
+        color: AppColor.textPrimary,
       ),
       titleLarge: t.titleLarge?.copyWith(
-        fontSize: 16, fontWeight: FontWeight.w600, color: AppColor.textPrimary,
+        fontSize: 16,
+        fontWeight: FontWeight.w600,
+        color: AppColor.textPrimary,
       ),
       titleMedium: t.titleMedium?.copyWith(
-        fontSize: 14, fontWeight: FontWeight.w600, color: AppColor.textPrimary,
+        fontSize: 14,
+        fontWeight: FontWeight.w600,
+        color: AppColor.textPrimary,
       ),
       titleSmall: t.titleSmall?.copyWith(
-        fontSize: 13, fontWeight: FontWeight.w600, color: AppColor.textPrimary,
+        fontSize: 13,
+        fontWeight: FontWeight.w600,
+        color: AppColor.textPrimary,
       ),
-      bodyLarge: t.bodyLarge?.copyWith(fontSize: 14, height: 1.45, color: AppColor.textPrimary),
-      bodyMedium: t.bodyMedium?.copyWith(fontSize: 13, height: 1.45, color: AppColor.textSecondary),
-      bodySmall: t.bodySmall?.copyWith(fontSize: 12, height: 1.4, color: AppColor.textSecondary),
+      bodyLarge: t.bodyLarge?.copyWith(
+        fontSize: 14,
+        height: 1.45,
+        color: AppColor.textPrimary,
+      ),
+      bodyMedium: t.bodyMedium?.copyWith(
+        fontSize: 13,
+        height: 1.45,
+        color: AppColor.textSecondary,
+      ),
+      bodySmall: t.bodySmall?.copyWith(
+        fontSize: 12,
+        height: 1.4,
+        color: AppColor.textSecondary,
+      ),
       labelLarge: t.labelLarge?.copyWith(
-        fontSize: 13, fontWeight: FontWeight.w600, color: AppColor.textPrimary,
+        fontSize: 13,
+        fontWeight: FontWeight.w600,
+        color: AppColor.textPrimary,
       ),
       labelSmall: t.labelSmall?.copyWith(
-        fontSize: 11, fontWeight: FontWeight.w600, letterSpacing: 0.6, color: AppColor.textMuted,
+        fontSize: 11,
+        fontWeight: FontWeight.w600,
+        letterSpacing: 0.6,
+        color: AppColor.textMuted,
       ),
     );
   }

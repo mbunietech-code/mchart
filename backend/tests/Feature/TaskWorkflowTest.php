@@ -135,4 +135,32 @@ class TaskWorkflowTest extends TestCase
 
         $this->actingAs($staff)->postJson("/api/v1/tasks/{$task->id}/approve")->assertForbidden();
     }
+
+    public function test_manager_can_override_status_skipping_the_workflow(): void
+    {
+        [$dept, $manager, $staff] = $this->scenario();
+        $task = Task::factory()->createdBy($manager)->assignedTo($staff)->create();
+
+        // Assigned -> Approved directly is not a valid transition, but an override allows it.
+        $this->actingAs($manager)
+            ->postJson("/api/v1/tasks/{$task->id}/set-status", ['status' => TaskStatus::Approved->value])
+            ->assertOk()
+            ->assertJsonPath('data.status', TaskStatus::Approved->value);
+
+        $this->assertDatabaseHas('task_status_history', [
+            'task_id' => $task->id,
+            'new_status' => TaskStatus::Approved->value,
+            'changed_by' => $manager->id,
+        ]);
+    }
+
+    public function test_staff_cannot_override_status(): void
+    {
+        [$dept, $manager, $staff] = $this->scenario();
+        $task = Task::factory()->createdBy($manager)->assignedTo($staff)->create();
+
+        $this->actingAs($staff)
+            ->postJson("/api/v1/tasks/{$task->id}/set-status", ['status' => TaskStatus::Approved->value])
+            ->assertForbidden();
+    }
 }

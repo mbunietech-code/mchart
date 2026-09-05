@@ -69,7 +69,10 @@ abstract final class AppTheme {
         filled: true,
         fillColor: AppColor.surface,
         isDense: true,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 12,
+          vertical: 12,
+        ),
         hintStyle: const TextStyle(color: AppColor.textMuted, fontSize: 13),
         prefixIconColor: AppColor.textMuted,
         suffixIconColor: AppColor.textMuted,
@@ -103,7 +106,9 @@ abstract final class AppTheme {
         textStyle: const TextStyle(color: Colors.white, fontSize: 12),
       ),
       scrollbarTheme: ScrollbarThemeData(
-        thumbColor: WidgetStatePropertyAll(AppColor.borderStrong.withValues(alpha: 0.9)),
+        thumbColor: WidgetStatePropertyAll(
+          AppColor.borderStrong.withValues(alpha: 0.9),
+        ),
         radius: const Radius.circular(999),
         thickness: const WidgetStatePropertyAll(6),
       ),

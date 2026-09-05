@@ -1,6 +1,6 @@
 # MChart (Mbunie Chart)
 
-A unified communication & task-management workspace for MbuniTech — chat, a
+A unified communication & task-management workspace for Mbunietech — chat, a
 structured task lifecycle, real-time notifications, and management dashboards in
 one product. Desktop-first (Windows / macOS), Android to follow.
 

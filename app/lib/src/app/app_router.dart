@@ -44,15 +44,18 @@ final routerProvider = Provider<GoRouter>((ref) {
       // resolves to) depends on the account's role.
       final role = auth.user.role;
       final path = state.matchedLocation;
-      if (path.startsWith('/dashboard') && !role.isManagerOrAdmin) return '/tasks';
-      if (path.startsWith('/settings') && role != UserRole.admin) return '/tasks';
+      if (path.startsWith('/dashboard') && !role.isManagerOrAdmin)
+        return '/tasks';
+      if (path.startsWith('/settings') && role != UserRole.admin)
+        return '/tasks';
 
       return null;
     },
     routes: [
       GoRoute(
         path: '/login',
-        pageBuilder: (context, state) => const NoTransitionPage(child: LoginScreen()),
+        pageBuilder: (context, state) =>
+            const NoTransitionPage(child: LoginScreen()),
       ),
       ShellRoute(
         navigatorKey: _shellKey,
@@ -60,7 +63,8 @@ final routerProvider = Provider<GoRouter>((ref) {
         routes: [
           GoRoute(
             path: '/dashboard',
-            pageBuilder: (c, s) => const NoTransitionPage(child: DashboardScreen()),
+            pageBuilder: (c, s) =>
+                const NoTransitionPage(child: DashboardScreen()),
           ),
           GoRoute(
             path: '/tasks',
@@ -69,7 +73,9 @@ final routerProvider = Provider<GoRouter>((ref) {
               GoRoute(
                 path: ':id',
                 parentNavigatorKey: _rootKey,
-                builder: (c, s) => TaskDetailScreen(taskId: int.parse(s.pathParameters['id']!)),
+                builder: (c, s) => TaskDetailScreen(
+                  taskId: int.parse(s.pathParameters['id']!),
+                ),
               ),
             ],
           ),
@@ -83,7 +89,8 @@ final routerProvider = Provider<GoRouter>((ref) {
           ),
           GoRoute(
             path: '/settings',
-            pageBuilder: (c, s) => const NoTransitionPage(child: SettingsScreen()),
+            pageBuilder: (c, s) =>
+                const NoTransitionPage(child: SettingsScreen()),
           ),
         ],
       ),

@@ -14,10 +14,10 @@ class AppAvatar extends StatelessWidget {
   });
 
   AppAvatar.forUser(User user, {super.key, this.size = 34, bool? showPresence})
-      : label = user.initials,
-        online = showPresence == true ? user.isOnline : null,
-        color = _colorFor(user.id),
-        imageUrl = null;
+    : label = user.initials,
+      online = showPresence == true ? user.isOnline : null,
+      color = _colorFor(user.id),
+      imageUrl = null;
 
   final String label;
   final double size;
@@ -43,7 +43,14 @@ class AppAvatar extends StatelessWidget {
         border: Border.all(color: Colors.white, width: 1.5),
       ),
       child: imageUrl != null
-          ? ClipOval(child: Image.network(imageUrl!, width: size, height: size, fit: BoxFit.cover))
+          ? ClipOval(
+              child: Image.network(
+                imageUrl!,
+                width: size,
+                height: size,
+                fit: BoxFit.cover,
+              ),
+            )
           : Text(
               label,
               style: TextStyle(

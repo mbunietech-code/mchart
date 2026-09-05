@@ -19,11 +19,13 @@ final realtimeClientProvider = Provider<RealtimeClient>((ref) {
   final tokens = ref.watch(tokenStoreProvider);
   final authDio = Dio(BaseOptions(headers: {'Accept': 'application/json'}))
     ..interceptors.add(
-      InterceptorsWrapper(onRequest: (o, h) {
-        final t = tokens.value;
-        if (t != null) o.headers['Authorization'] = 'Bearer $t';
-        h.next(o);
-      }),
+      InterceptorsWrapper(
+        onRequest: (o, h) {
+          final t = tokens.value;
+          if (t != null) o.headers['Authorization'] = 'Bearer $t';
+          h.next(o);
+        },
+      ),
     );
   final client = RealtimeClient(authDio: authDio);
   ref.onDispose(client.dispose);

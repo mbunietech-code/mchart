@@ -33,7 +33,10 @@ class PageHeader extends StatelessWidget {
               Gap.xs,
               ConstrainedBox(
                 constraints: const BoxConstraints(maxWidth: 640),
-                child: Text(subtitle!, style: Theme.of(context).textTheme.bodyMedium),
+                child: Text(
+                  subtitle!,
+                  style: Theme.of(context).textTheme.bodyMedium,
+                ),
               ),
             ],
           ],

@@ -1,6 +1,10 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <uses-permission android:name="android.permission.INTERNET"/>
+    <!-- Capturing a new photo/video for task attachments (image_picker). -->
+    <uses-permission android:name="android.permission.CAMERA"/>
+    <uses-feature android:name="android.hardware.camera" android:required="false"/>
     <application
-        android:label="mchart"
+        android:label="MChart"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity

@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs"
+     xmlns:ui="http://wixtoolset.org/schemas/v4/wxs/ui">
+
+  <!--
+    UpgradeCode must never change across releases — it's how Windows
+    Installer recognizes "this is a newer MChart" instead of a different
+    product. Product Id (package/@Id) is left auto-generated (a new GUID
+    each build), which is what MajorUpgrade below expects.
+  -->
+  <Package Name="MChart"
+           Manufacturer="Mbunietech Technologies Limited"
+           Version="$(var.MChartVersion)"
+           UpgradeCode="8870FD23-AC8C-4A97-8A20-1C7F59213A49"
+           Compressed="yes"
+           InstallerVersion="500">
+
+    <SummaryInformation Description="MChart — Mbunietech Workspace installer" Manufacturer="Mbunietech Technologies Limited" />
+
+    <MajorUpgrade DowngradeErrorMessage="A newer version of MChart is already installed. Uninstall it first if you need to downgrade." />
+
+    <MediaTemplate EmbedCab="yes" />
+
+    <Icon Id="AppIcon.ico" SourceFile="$(var.SourceDir)\runner\resources\app_icon.ico" />
+    <Property Id="ARPPRODUCTICON" Value="AppIcon.ico" />
+    <Property Id="ARPHELPLINK" Value="https://cha.mbuniehub.com" />
+    <Property Id="ARPURLINFOABOUT" Value="https://cha.mbuniehub.com" />
+
+    <!-- Lets the installing user pick where MChart goes; defaults under
+         Program Files but is not fixed there. -->
+    <StandardDirectory Id="ProgramFiles64Folder">
+      <Directory Id="INSTALLFOLDER" Name="MChart" />
+    </StandardDirectory>
+    <StandardDirectory Id="ProgramMenuFolder" />
+    <StandardDirectory Id="DesktopFolder" />
+
+    <Feature Id="MainApplication" Title="MChart" Level="1">
+      <ComponentGroupRef Id="InstallFolderFiles" />
+      <ComponentRef Id="ApplicationShortcuts" />
+    </Feature>
+
+    <!-- Standard "choose install folder" wizard UI. -->
+    <ui:WixUI Id="WixUI_InstallDir" InstallDirectory="INSTALLFOLDER" />
+    <WixVariable Id="WixUILicenseRtf" Value="license.rtf" />
+
+    <Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOXTEXT" Value="Launch MChart" />
+    <Property Id="WixShellExecTarget" Value="[INSTALLFOLDER]mchart.exe" />
+    <CustomAction Id="LaunchApplication" DllEntry="WixShellExec" Impersonate="yes" BinaryRef="Wix4UtilCA_X64" />
+    <UI>
+      <Publish Dialog="ExitDialog" Control="Finish" Event="DoAction" Value="LaunchApplication" Condition="WIXUI_EXITDIALOGOPTIONALCHECKBOXCHECKBOX = 1 and NOT Installed" />
+    </UI>
+
+  </Package>
+
+  <Fragment>
+    <ComponentGroup Id="InstallFolderFiles" Directory="INSTALLFOLDER">
+      <!-- Recursively packages every file the Flutter Windows release
+           build produced (exe, DLLs, data/flutter_assets/**, icudtl.dat,
+           app.so) — nothing here is hand-listed, so a future flutter
+           build never needs this file edited. -->
+      <Files Include="$(var.ReleaseDir)\**" />
+    </ComponentGroup>
+  </Fragment>
+
+  <Fragment>
+    <DirectoryRef Id="INSTALLFOLDER">
+      <Component Id="ApplicationShortcuts" Guid="7C2C7C0B-1E9A-4E77-9C7F-2E7C0B9F1A11">
+        <Shortcut Id="StartMenuShortcut"
+                  Directory="ProgramMenuFolder"
+                  Name="MChart"
+                  Description="MChart — Mbunietech communication &amp; task workspace"
+                  Target="[INSTALLFOLDER]mchart.exe"
+                  WorkingDirectory="INSTALLFOLDER"
+                  Icon="AppIcon.ico" />
+        <Shortcut Id="DesktopShortcut"
+                  Directory="DesktopFolder"
+                  Name="MChart"
+                  Description="MChart — Mbunietech communication &amp; task workspace"
+                  Target="[INSTALLFOLDER]mchart.exe"
+                  WorkingDirectory="INSTALLFOLDER"
+                  Icon="AppIcon.ico" />
+        <RemoveFolder Id="RemoveProgramMenuFolder" Directory="ProgramMenuFolder" On="uninstall" />
+        <RegistryValue Root="HKCU" Key="Software\Mbunietech\MChart" Name="installed" Type="integer" Value="1" KeyPath="yes" />
+      </Component>
+    </DirectoryRef>
+  </Fragment>
+</Wix>

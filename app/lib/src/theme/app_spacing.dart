@@ -50,4 +50,9 @@ abstract final class AppLayout {
   static const topBarHeight = 60.0;
   static const contentMaxWidth = 1180.0;
   static const contentPadding = EdgeInsets.fromLTRB(28, 22, 28, 32);
+
+  /// Below this width the permanent sidebar no longer fits alongside real
+  /// content (phones, small split-screen panes) — the shell switches to a
+  /// bottom nav bar instead.
+  static const mobileBreakpoint = 700.0;
 }
