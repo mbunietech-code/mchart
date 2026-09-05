@@ -39,7 +39,7 @@ class MessageSent implements ShouldBroadcast
      */
     public function broadcastWith(): array
     {
-        $this->message->loadMissing(['sender', 'attachments']);
+        $this->message->loadMissing(['sender', 'attachments', 'replyTo.sender', 'reactions']);
 
         return (new MessageResource($this->message))->resolve();
     }

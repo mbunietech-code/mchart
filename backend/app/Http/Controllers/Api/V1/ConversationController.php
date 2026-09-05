@@ -96,4 +96,15 @@ class ConversationController extends Controller
 
         return new ConversationResource($conversation->load(['users', 'latestMessage.sender']));
     }
+
+    public function update(Request $request, Conversation $conversation): ConversationResource
+    {
+        $this->authorize('update', $conversation);
+
+        $conversation->update($request->validate([
+            'name' => ['required', 'string', 'max:150'],
+        ]));
+
+        return new ConversationResource($conversation->load('users'));
+    }
 }

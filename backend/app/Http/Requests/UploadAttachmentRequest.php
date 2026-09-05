@@ -20,9 +20,10 @@ class UploadAttachmentRequest extends FormRequest
             'file' => [
                 'required',
                 'file',
-                'max:20480', // 20 MB
+                'max:51200', // 50 MB — stays under Cloudflare's free-tier 100MB body limit with room to spare.
                 'mimetypes:image/jpeg,image/png,image/gif,image/webp,application/pdf,'
                     .'audio/mpeg,audio/mp4,audio/aac,audio/ogg,audio/webp,audio/wav,audio/x-wav,'
+                    .'video/mp4,video/webm,video/quicktime,video/3gpp,video/x-msvideo,'
                     .'text/plain,application/zip,application/msword,'
                     .'application/vnd.openxmlformats-officedocument.wordprocessingml.document,'
                     .'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',

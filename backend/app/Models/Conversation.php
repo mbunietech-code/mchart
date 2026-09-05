@@ -60,4 +60,17 @@ class Conversation extends Model
     {
         return $this->participants()->where('user_id', $user->id)->exists();
     }
+
+    /** A group admin (per conversation_participants.role), the creator, or a workspace admin. */
+    public function isManagedBy(User $user): bool
+    {
+        if ($user->isAdmin() || $this->created_by === $user->id) {
+            return true;
+        }
+
+        return $this->participants()
+            ->where('user_id', $user->id)
+            ->where('role', 'admin')
+            ->exists();
+    }
 }

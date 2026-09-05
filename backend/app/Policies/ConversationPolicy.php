@@ -4,6 +4,7 @@ namespace App\Policies;
 
 use App\Enums\ConversationType;
 use App\Models\Conversation;
+use App\Models\Message;
 use App\Models\User;
 
 class ConversationPolicy
@@ -31,13 +32,25 @@ class ConversationPolicy
 
     public function update(User $user, Conversation $conversation): bool
     {
-        if ($user->isAdmin() || $conversation->created_by === $user->id) {
-            return true;
-        }
+        return $conversation->isManagedBy($user);
+    }
 
-        return $conversation->participants()
-            ->where('user_id', $user->id)
-            ->where('role', 'admin')
-            ->exists();
+    /** Add/remove participants, i.e. group admin controls. */
+    public function manageParticipants(User $user, Conversation $conversation): bool
+    {
+        return $conversation->isManagedBy($user);
+    }
+
+    /** A member can always leave a group themselves. */
+    public function leave(User $user, Conversation $conversation): bool
+    {
+        return $conversation->hasParticipant($user);
+    }
+
+    public function deleteMessage(User $user, Conversation $conversation, Message $message): bool
+    {
+        return $user->isAdmin()
+            || $message->sender_id === $user->id
+            || $conversation->isManagedBy($user);
     }
 }

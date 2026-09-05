@@ -3,10 +3,12 @@
 use App\Http\Controllers\Api\V1\Auth\AuthController;
 use App\Http\Controllers\Api\V1\Auth\PasswordResetController;
 use App\Http\Controllers\Api\V1\ConversationController;
+use App\Http\Controllers\Api\V1\ConversationParticipantController;
 use App\Http\Controllers\Api\V1\DashboardController;
 use App\Http\Controllers\Api\V1\DepartmentController;
 use App\Http\Controllers\Api\V1\DeviceController;
 use App\Http\Controllers\Api\V1\MessageController;
+use App\Http\Controllers\Api\V1\MessageReactionController;
 use App\Http\Controllers\Api\V1\NotificationController;
 use App\Http\Controllers\Api\V1\RoleController;
 use App\Http\Controllers\Api\V1\TaskAttachmentController;
@@ -58,9 +60,16 @@ Route::middleware(['auth:sanctum', 'active'])->group(function () {
     Route::get('conversations', [ConversationController::class, 'index']);
     Route::post('conversations', [ConversationController::class, 'store']);
     Route::get('conversations/{conversation}', [ConversationController::class, 'show']);
+    Route::patch('conversations/{conversation}', [ConversationController::class, 'update']);
+    Route::post('conversations/{conversation}/participants', [ConversationParticipantController::class, 'store']);
+    Route::delete('conversations/{conversation}/participants/{user}', [ConversationParticipantController::class, 'destroy']);
     Route::get('conversations/{conversation}/messages', [MessageController::class, 'index']);
     Route::post('conversations/{conversation}/messages', [MessageController::class, 'store']);
+    Route::delete('conversations/{conversation}/messages/{message}', [MessageController::class, 'destroy']);
     Route::post('conversations/{conversation}/read', [MessageController::class, 'markRead']);
+    Route::post('conversations/{conversation}/typing', [MessageController::class, 'typing']);
+    Route::post('conversations/{conversation}/messages/{message}/reactions', [MessageReactionController::class, 'store']);
+    Route::delete('conversations/{conversation}/messages/{message}/reactions', [MessageReactionController::class, 'destroy']);
 
     // Tasks
     Route::get('tasks', [TaskController::class, 'index']);
