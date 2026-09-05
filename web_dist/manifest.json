@@ -1,11 +1,11 @@
 {
-    "name": "MChart — MbuniTech Workspace",
+    "name": "MChart — Mbunietech Workspace",
     "short_name": "MChart",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#F8FAFC",
     "theme_color": "#1E40AF",
-    "description": "MChart — MbuniTech communication & task workspace",
+    "description": "MChart — Mbunietech communication & task workspace",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [
