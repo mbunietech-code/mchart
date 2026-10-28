@@ -4,7 +4,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../models/message.dart';
 import '../../models/user.dart';
 import '../../theme/app_color.dart';
-import '../../theme/app_spacing.dart';
 import '../../widgets/avatar.dart';
 import '../../widgets/pills.dart';
 import '../auth/auth_controller.dart';
@@ -218,7 +217,7 @@ class _GroupInfoSheetState extends ConsumerState<_GroupInfoSheet> {
                                   dense: true,
                                 ),
                               ),
-                            if (amAdmin && me != null && p.id != me.id)
+                            if (amAdmin && p.id != me.id)
                               IconButton(
                                 icon: const Icon(
                                   Icons.remove_circle_outline_rounded,

@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
 import '../theme/app_color.dart';
-import '../theme/app_spacing.dart';
 
 /// The MChart mark — a rounded white tile bordered in the design system's
 /// subtle border color, containing the navy checkmark glyph.

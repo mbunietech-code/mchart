@@ -6,7 +6,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../models/message.dart';
 import '../../models/user.dart';
 import '../../theme/app_color.dart';
-import '../../theme/app_spacing.dart';
 import '../../widgets/avatar.dart';
 import '../../widgets/primitives.dart';
 import '../auth/auth_controller.dart';

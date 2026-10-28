@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -16,8 +17,14 @@ class LoginScreen extends ConsumerStatefulWidget {
 
 class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _email = TextEditingController();
-  final _password = TextEditingController();
+  // Debug builds start pre-filled with the seeded local admin (see README),
+  // so testing on a phone doesn't fight the soft keyboard. Release: empty.
+  final _email = TextEditingController(
+    text: kDebugMode ? 'admin@mbunietech.com' : null,
+  );
+  final _password = TextEditingController(
+    text: kDebugMode ? 'password' : null,
+  );
   bool _obscure = true;
   bool _remember = true;
   bool _busy = false;
@@ -121,6 +128,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     TextFormField(
                       controller: _email,
                       keyboardType: TextInputType.emailAddress,
+                      autocorrect: false,
                       autofillHints: const [AutofillHints.username],
                       decoration: const InputDecoration(
                         hintText: 'you@mbunietech.com',

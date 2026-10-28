@@ -28,7 +28,7 @@ final routerProvider = Provider<GoRouter>((ref) {
 
   return GoRouter(
     navigatorKey: _rootKey,
-    initialLocation: '/tasks',
+    initialLocation: '/chats',
     refreshListenable: refresh,
     redirect: (context, state) {
       final auth = ref.read(authControllerProvider);
@@ -37,7 +37,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       if (auth is AuthUnknown || auth is AuthLoading) return null;
 
       if (auth is! Authenticated) return loggingIn ? null : '/login';
-      if (loggingIn) return '/tasks';
+      if (loggingIn) return '/chats';
 
       // Route by role: Dashboard is manager/admin, Settings is admin-only —
       // one login for everyone, but where it lands (and what a typed URL
@@ -45,9 +45,9 @@ final routerProvider = Provider<GoRouter>((ref) {
       final role = auth.user.role;
       final path = state.matchedLocation;
       if (path.startsWith('/dashboard') && !role.isManagerOrAdmin)
-        return '/tasks';
+        return '/chats';
       if (path.startsWith('/settings') && role != UserRole.admin)
-        return '/tasks';
+        return '/chats';
 
       return null;
     },
