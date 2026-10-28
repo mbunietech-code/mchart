@@ -459,6 +459,10 @@ class _ThreadPaneState extends ConsumerState<_ThreadPane> {
   final _recorder = AudioRecorder();
   DateTime? _recordingSince;
   Timer? _recordTick;
+  StreamSubscription<Amplitude>? _amplitudeSub;
+
+  /// Recent mic levels (0..1), newest last: drives the live waveform.
+  final List<double> _levels = [];
 
   @override
   void dispose() {
@@ -466,6 +470,7 @@ class _ThreadPaneState extends ConsumerState<_ThreadPane> {
     _scroll.dispose();
     _inputFocus.dispose();
     _recordTick?.cancel();
+    _amplitudeSub?.cancel();
     _recorder.dispose();
     super.dispose();
   }
@@ -503,10 +508,28 @@ class _ThreadPaneState extends ConsumerState<_ThreadPane> {
       const Duration(seconds: 1),
       (_) => setState(() {}),
     );
+    _levels.clear();
+    _amplitudeSub = _recorder
+        .onAmplitudeChanged(const Duration(milliseconds: 100))
+        .listen((a) {
+          // dBFS: about -60 is silence, 0 is as loud as it gets.
+          final level = ((a.current + 60) / 60).clamp(0.05, 1.0);
+          setState(() {
+            _levels.add(level);
+            if (_levels.length > 40) _levels.removeAt(0);
+          });
+        });
+  }
+
+  void _stopLevels() {
+    _amplitudeSub?.cancel();
+    _amplitudeSub = null;
+    _levels.clear();
   }
 
   Future<void> _cancelRecording() async {
     _recordTick?.cancel();
+    _stopLevels();
     await _recorder.cancel();
     if (mounted) setState(() => _recordingSince = null);
   }
@@ -514,6 +537,7 @@ class _ThreadPaneState extends ConsumerState<_ThreadPane> {
   Future<void> _sendRecording() async {
     final seconds = _recordSeconds;
     _recordTick?.cancel();
+    _stopLevels();
     final path = await _recorder.stop();
     if (!mounted) return;
     setState(() => _recordingSince = null);
@@ -793,6 +817,7 @@ class _ThreadPaneState extends ConsumerState<_ThreadPane> {
           onAttach: () => _attach(),
           onAttachAudio: _startRecording,
           recordingSeconds: _recording ? _recordSeconds : null,
+          recordingLevels: _levels,
           onCancelRecording: _cancelRecording,
           onSendRecording: _sendRecording,
           onTyping: () => ref
@@ -1718,6 +1743,41 @@ class _VoiceNoteState extends State<_VoiceNote> {
   }
 }
 
+/// Bars that rise and fall with the microphone while recording, newest
+/// on the right, so it's obvious the voice is being picked up.
+class _LiveWaveform extends StatelessWidget {
+  const _LiveWaveform({required this.levels});
+  final List<double> levels;
+
+  static const _bars = 40;
+
+  @override
+  Widget build(BuildContext context) {
+    final padded = [
+      ...List<double>.filled((_bars - levels.length).clamp(0, _bars), 0.05),
+      ...levels.length > _bars ? levels.sublist(levels.length - _bars) : levels,
+    ];
+    return SizedBox(
+      height: 32,
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          for (final l in padded)
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 100),
+              width: 3,
+              height: 4 + l * 28,
+              decoration: BoxDecoration(
+                color: AppColor.brand.withValues(alpha: 0.35 + l * 0.65),
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
 class _Composer extends StatelessWidget {
   const _Composer({
     required this.controller,
@@ -1734,12 +1794,14 @@ class _Composer extends StatelessWidget {
     this.onAttachAudio,
     this.onTyping,
     this.recordingSeconds,
+    this.recordingLevels = const [],
     this.onCancelRecording,
     this.onSendRecording,
   });
 
   /// Non-null while a voice note is being recorded.
   final int? recordingSeconds;
+  final List<double> recordingLevels;
   final VoidCallback? onCancelRecording;
   final VoidCallback? onSendRecording;
   final TextEditingController controller;
@@ -1873,12 +1935,13 @@ class _Composer extends StatelessWidget {
                   size: 14,
                 ),
                 Gap.sm,
-                Expanded(
-                  child: Text(
-                    'Recording  ${Fmt.duration(recordingSeconds)}',
-                    style: const TextStyle(fontWeight: FontWeight.w600),
-                  ),
+                Text(
+                  Fmt.duration(recordingSeconds),
+                  style: const TextStyle(fontWeight: FontWeight.w600),
                 ),
+                Gap.sm,
+                Expanded(child: _LiveWaveform(levels: recordingLevels)),
+                Gap.sm,
                 FilledButton(
                   onPressed: onSendRecording,
                   style: FilledButton.styleFrom(
