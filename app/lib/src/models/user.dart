@@ -32,6 +32,7 @@ class User {
     this.departmentId,
     this.department,
     this.lastSeenAt,
+    this.mustChangePassword = false,
   });
 
   final int id;
@@ -43,6 +44,9 @@ class User {
   final int? departmentId;
   final Department? department;
   final DateTime? lastSeenAt;
+
+  /// Signed in with a temporary password; must choose one before anything else.
+  final bool mustChangePassword;
 
   bool get isActive => status == 'active';
   bool get isOnline =>
@@ -77,6 +81,7 @@ class User {
         ? Department.fromJson(j['department'] as Map<String, dynamic>)
         : null,
     lastSeenAt: _date(j['last_seen_at']),
+    mustChangePassword: j['must_change_password'] as bool? ?? false,
   );
 }
 

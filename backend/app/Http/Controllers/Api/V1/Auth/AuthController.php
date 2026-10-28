@@ -9,6 +9,7 @@ use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\Rules\Password;
 use Illuminate\Validation\ValidationException;
 
 class AuthController extends Controller
@@ -45,6 +46,23 @@ class AuthController extends Controller
         $request->user()->currentAccessToken()->delete();
 
         return response()->json(['message' => 'Logged out.']);
+    }
+
+    /** First sign-in with a temporary password, or a voluntary change. */
+    public function changePassword(Request $request): UserResource
+    {
+        $data = $request->validate([
+            'current_password' => ['required', 'current_password:sanctum'],
+            'password' => ['required', 'confirmed', 'different:current_password', Password::defaults()],
+        ]);
+
+        $user = $request->user();
+        $user->forceFill(['password' => $data['password'], 'must_change_password' => false])->save();
+
+        // Other sessions were opened with the old password.
+        $user->tokens()->whereKeyNot($user->currentAccessToken()->id)->delete();
+
+        return new UserResource($user->load('department', 'role'));
     }
 
     public function me(Request $request): UserResource

@@ -23,7 +23,8 @@ class StoreUserRequest extends FormRequest
             'name' => ['required', 'string', 'max:150'],
             'email' => ['required', 'email', 'max:150', 'unique:users,email'],
             'phone' => ['nullable', 'string', 'max:30'],
-            'password' => ['required', 'confirmed', Password::defaults()],
+            // Empty = generate a temporary password and email it.
+            'password' => ['nullable', 'confirmed', Password::defaults()],
             'role' => ['required', Rule::enum(UserRole::class)],
             'department_id' => ['nullable', 'exists:departments,id'],
             'status' => ['nullable', Rule::in(['active', 'inactive'])],

@@ -22,9 +22,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _email = TextEditingController(
     text: kDebugMode ? 'admin@mbunietech.com' : null,
   );
-  final _password = TextEditingController(
-    text: kDebugMode ? 'password' : null,
-  );
+  final _password = TextEditingController(text: kDebugMode ? 'password' : null);
   bool _obscure = true;
   bool _remember = true;
   bool _busy = false;

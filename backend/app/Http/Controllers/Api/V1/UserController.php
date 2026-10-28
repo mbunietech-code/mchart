@@ -6,14 +6,44 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreUserRequest;
 use App\Http\Requests\UpdateUserRequest;
 use App\Http\Resources\UserResource;
+use App\Mail\UserInvitation;
 use App\Models\Role;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Str;
 
 class UserController extends Controller
 {
+    /** Readable but strong: no look-alike characters, always mixed. */
+    public static function temporaryPassword(): string
+    {
+        $pick = fn (string $set, int $n) => collect(range(1, $n))
+            ->map(fn () => $set[random_int(0, strlen($set) - 1)])->implode('');
+
+        return Str::of($pick('ABCDEFGHJKLMNPQRSTUVWXYZ', 2)
+            .$pick('abcdefghijkmnpqrstuvwxyz', 5)
+            .$pick('23456789', 3)
+            .$pick('@#%*!', 1))->toString();
+    }
+
+    private function sendInvitation(User $user, string $temporary, string $invitedBy): bool
+    {
+        try {
+            Mail::to($user->email)->send(new UserInvitation($user, $temporary, $invitedBy));
+
+            return config('mail.default') !== 'log';
+        } catch (\Throwable $e) {
+            // The account still exists; the admin sees the password and can share it.
+            Log::warning('[invite] email failed', ['user_id' => $user->id, 'error' => $e->getMessage()]);
+
+            return false;
+        }
+    }
+
     public function index(Request $request): AnonymousResourceCollection
     {
         $query = User::query()->with('department', 'role');
@@ -49,9 +79,22 @@ class UserController extends Controller
         $data['role_id'] = Role::where('name', $data['role'])->value('id');
         unset($data['role']);
 
+        // The admin knows this password either way, so the new user must
+        // replace it on first sign-in.
+        $temporary = ($data['password'] ?? null) ?: self::temporaryPassword();
+        $data['password'] = $temporary;
+        $data['must_change_password'] = true;
+
         $user = User::create($data);
+        $invited = $this->sendInvitation($user, $temporary, $request->user()->name);
 
         return (new UserResource($user->load('department', 'role')))
+            ->additional([
+                'invitation_sent' => $invited,
+                // Shown once to the admin so they can pass it on if the email
+                // doesn't arrive; never stored in plain text.
+                'temporary_password' => $temporary,
+            ])
             ->response()
             ->setStatusCode(201);
     }
@@ -72,6 +115,10 @@ class UserController extends Controller
 
         if (empty($data['password'])) {
             unset($data['password']);
+        } elseif ($request->user()->id !== $user->id) {
+            // An admin-set password is a temporary one for someone else.
+            $data['must_change_password'] = true;
+            $user->tokens()->delete();
         }
 
         $user->update($data);

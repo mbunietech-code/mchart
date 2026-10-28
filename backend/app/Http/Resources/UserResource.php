@@ -21,6 +21,7 @@ class UserResource extends JsonResource
             'department_id' => $this->department_id,
             'department' => new DepartmentResource($this->whenLoaded('department')),
             'last_seen_at' => $this->last_seen_at,
+            'must_change_password' => (bool) $this->must_change_password,
             'created_at' => $this->created_at,
         ];
     }

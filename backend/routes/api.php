@@ -32,8 +32,10 @@ Route::post('auth/password/reset', [PasswordResetController::class, 'reset'])
     ->middleware('throttle:6,1');
 
 // ----- Authenticated ---------------------------------------------------
-Route::middleware(['auth:sanctum', 'active'])->group(function () {
+Route::middleware(['auth:sanctum', 'active', 'password.changed'])->group(function () {
     Route::post('auth/logout', [AuthController::class, 'logout']);
+    Route::post('auth/password/change', [AuthController::class, 'changePassword'])
+        ->middleware('throttle:6,1');
     Route::get('me', [AuthController::class, 'me']);
 
     // Devices (push registration)

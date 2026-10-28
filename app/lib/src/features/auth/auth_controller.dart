@@ -100,6 +100,22 @@ class AuthController extends StateNotifier<AuthState> {
     state = const Unauthenticated();
   }
 
+  /// Replaces a temporary password (or changes it voluntarily).
+  Future<void> changePassword({
+    required String current,
+    required String next,
+  }) async {
+    final json = await _api.post<Map<String, dynamic>>(
+      '/auth/password/change',
+      data: {
+        'current_password': current,
+        'password': next,
+        'password_confirmation': next,
+      },
+    );
+    state = Authenticated(User.fromJson(json['data'] as Map<String, dynamic>));
+  }
+
   void updateUser(User user) {
     if (state is Authenticated) state = Authenticated(user);
   }

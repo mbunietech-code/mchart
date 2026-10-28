@@ -36,9 +36,13 @@ class DirectoryRepository {
     return Paginated.listOf(json, Department.fromJson);
   }
 
-  Future<User> createUser(Map<String, dynamic> body) async {
+  Future<CreatedUser> createUser(Map<String, dynamic> body) async {
     final json = await _api.post<Map<String, dynamic>>('/users', data: body);
-    return User.fromJson(json['data'] as Map<String, dynamic>);
+    return (
+      user: User.fromJson(json['data'] as Map<String, dynamic>),
+      temporaryPassword: json['temporary_password'] as String?,
+      invitationSent: json['invitation_sent'] as bool? ?? false,
+    );
   }
 
   Future<User> updateUser(int id, Map<String, dynamic> body) async {
@@ -59,6 +63,12 @@ class DirectoryRepository {
     return Department.fromJson(json['data'] as Map<String, dynamic>);
   }
 }
+
+typedef CreatedUser = ({
+  User user,
+  String? temporaryPassword,
+  bool invitationSent,
+});
 
 final directoryRepositoryProvider = Provider(
   (ref) => DirectoryRepository(ref.watch(apiClientProvider)),

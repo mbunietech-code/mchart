@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../features/auth/auth_controller.dart';
+import '../features/auth/change_password_screen.dart';
 import '../features/auth/login_screen.dart';
 import '../features/chat/chat_screen.dart';
 import '../features/dashboard/dashboard_screen.dart';
@@ -38,7 +39,13 @@ final routerProvider = Provider<GoRouter>((ref) {
       if (auth is AuthUnknown || auth is AuthLoading) return null;
 
       if (auth is! Authenticated) return loggingIn ? null : '/login';
-      if (loggingIn) return '/chats';
+
+      // A temporary password unlocks nothing but choosing a real one.
+      final changing = state.matchedLocation == '/change-password';
+      if (auth.user.mustChangePassword) {
+        return changing ? null : '/change-password';
+      }
+      if (loggingIn || changing) return '/chats';
 
       // Route by role: Dashboard is manager/admin, Settings is admin-only —
       // one login for everyone, but where it lands (and what a typed URL
@@ -53,6 +60,11 @@ final routerProvider = Provider<GoRouter>((ref) {
       return null;
     },
     routes: [
+      GoRoute(
+        path: '/change-password',
+        pageBuilder: (context, state) =>
+            const NoTransitionPage(child: ChangePasswordScreen()),
+      ),
       GoRoute(
         path: '/login',
         pageBuilder: (context, state) =>

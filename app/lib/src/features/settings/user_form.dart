@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/api_exception.dart';
 import '../../models/enums.dart';
 import '../../models/user.dart';
+import '../../theme/app_color.dart';
 import '../../theme/app_spacing.dart';
 import '../directory/directory_repository.dart';
 
@@ -70,13 +71,24 @@ class _UserFormState extends ConsumerState<_UserForm> {
           body['password_confirmation'] = _password.text;
         }
         await repo.updateUser(widget.user!.id, body);
+        ref.invalidate(usersProvider);
+        if (mounted) Navigator.pop(context);
       } else {
-        body['password'] = _password.text;
-        body['password_confirmation'] = _password.text;
-        await repo.createUser(body);
+        // Empty = the server generates a temporary password and emails it.
+        if (_password.text.isNotEmpty) {
+          body['password'] = _password.text;
+          body['password_confirmation'] = _password.text;
+        }
+        final created = await repo.createUser(body);
+        ref.invalidate(usersProvider);
+        if (!mounted) return;
+        final nav = Navigator.of(context);
+        nav.pop();
+        await showDialog<void>(
+          context: nav.context,
+          builder: (_) => _InvitedDialog(created: created),
+        );
       }
-      ref.invalidate(usersProvider);
-      if (mounted) Navigator.pop(context);
     } on ApiException catch (e) {
       setState(
         () => _error = e.errors?.values.firstOrNull?.firstOrNull ?? e.message,
@@ -168,14 +180,16 @@ class _UserFormState extends ConsumerState<_UserForm> {
               obscureText: true,
               decoration: InputDecoration(
                 labelText: _isEdit
-                    ? 'New password (optional)'
-                    : 'Initial password',
+                    ? 'New temporary password (optional)'
+                    : 'Temporary password (optional)',
+                helperText: _isEdit
+                    ? 'They will be asked to change it at next sign-in'
+                    : 'Leave empty to generate one. It is emailed with the app link, and they must change it at first sign-in.',
+                helperMaxLines: 3,
               ),
               validator: (v) {
-                if (_isEdit) return null;
-                return (v == null || v.length < 8)
-                    ? 'At least 8 characters'
-                    : null;
+                if (v == null || v.isEmpty) return null;
+                return v.length < 8 ? 'At least 8 characters' : null;
               },
             ),
             if (_error != null) ...[
@@ -205,6 +219,69 @@ class _UserFormState extends ConsumerState<_UserForm> {
           ],
         ),
       ),
+    );
+  }
+}
+
+/// Shown once after inviting: whether the email went out, and the
+/// temporary password so the admin can pass it on if it didn't.
+class _InvitedDialog extends StatelessWidget {
+  const _InvitedDialog({required this.created});
+  final CreatedUser created;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = Theme.of(context).textTheme;
+    final sent = created.invitationSent;
+    return AlertDialog(
+      icon: Icon(
+        sent ? Icons.mark_email_read_outlined : Icons.info_outline_rounded,
+        color: sent ? AppColor.success : AppColor.accent,
+      ),
+      title: Text('${created.user.name} invited'),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            sent
+                ? 'An email with the app download link and sign-in details was sent to ${created.user.email}.'
+                : 'The invitation email could not be sent. Share these sign-in details with them directly:',
+          ),
+          if (created.temporaryPassword != null) ...[
+            Gap.md,
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: AppColor.surfaceMuted,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  SelectableText('Username: ${created.user.email}'),
+                  Gap.xs,
+                  SelectableText(
+                    'Temporary password: ${created.temporaryPassword}',
+                    style: t.bodyMedium?.copyWith(fontWeight: FontWeight.w700),
+                  ),
+                ],
+              ),
+            ),
+            Gap.sm,
+            Text(
+              'They will be asked to choose their own password at first sign-in. This password is not shown again.',
+              style: t.bodySmall,
+            ),
+          ],
+        ],
+      ),
+      actions: [
+        FilledButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Done'),
+        ),
+      ],
     );
   }
 }
