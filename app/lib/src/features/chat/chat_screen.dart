@@ -980,93 +980,95 @@ class _MessageBubble extends StatelessWidget {
       context: context,
       backgroundColor: Colors.transparent,
       builder: (_) => SafeArea(
-        child: Container(
-          margin: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          // Material (not a coloured Container) so the ListTiles' ink shows.
+          child: Material(
             color: AppColor.surface,
             borderRadius: BorderRadius.circular(16),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    for (final emoji in _quickReactions)
-                      InkWell(
-                        borderRadius: BorderRadius.circular(20),
-                        onTap: () {
-                          Navigator.of(context).pop();
-                          final already = message.reactions
-                              .where((r) => r.mine)
-                              .any((r) => r.emoji == emoji);
-                          onReact?.call(emoji, already);
-                        },
-                        child: Padding(
-                          padding: const EdgeInsets.all(6),
-                          child: Text(
-                            emoji,
-                            style: const TextStyle(fontSize: 22),
+            clipBehavior: Clip.antiAlias,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      for (final emoji in _quickReactions)
+                        InkWell(
+                          borderRadius: BorderRadius.circular(20),
+                          onTap: () {
+                            Navigator.of(context).pop();
+                            final already = message.reactions
+                                .where((r) => r.mine)
+                                .any((r) => r.emoji == emoji);
+                            onReact?.call(emoji, already);
+                          },
+                          child: Padding(
+                            padding: const EdgeInsets.all(6),
+                            child: Text(
+                              emoji,
+                              style: const TextStyle(fontSize: 22),
+                            ),
                           ),
                         ),
-                      ),
-                  ],
-                ),
-              ),
-              const Divider(height: 1),
-              ListTile(
-                leading: const Icon(Icons.reply_rounded),
-                title: const Text('Reply'),
-                onTap: () {
-                  Navigator.of(context).pop();
-                  onReply?.call();
-                },
-              ),
-              if (onCopy != null)
-                ListTile(
-                  leading: const Icon(Icons.copy_rounded),
-                  title: const Text('Copy'),
-                  onTap: () {
-                    Navigator.of(context).pop();
-                    onCopy!.call();
-                  },
-                ),
-              if (onForward != null)
-                ListTile(
-                  leading: const Icon(Icons.shortcut_rounded),
-                  title: const Text('Forward'),
-                  onTap: () {
-                    Navigator.of(context).pop();
-                    onForward!.call();
-                  },
-                ),
-              if (onEdit != null)
-                ListTile(
-                  leading: const Icon(Icons.edit_outlined),
-                  title: const Text('Edit'),
-                  onTap: () {
-                    Navigator.of(context).pop();
-                    onEdit!.call();
-                  },
-                ),
-              if (mine && onDelete != null)
-                ListTile(
-                  leading: const Icon(
-                    Icons.delete_outline_rounded,
-                    color: AppColor.danger,
+                    ],
                   ),
-                  title: const Text(
-                    'Delete',
-                    style: TextStyle(color: AppColor.danger),
-                  ),
+                ),
+                const Divider(height: 1),
+                ListTile(
+                  leading: const Icon(Icons.reply_rounded),
+                  title: const Text('Reply'),
                   onTap: () {
                     Navigator.of(context).pop();
-                    onDelete!.call();
+                    onReply?.call();
                   },
                 ),
-            ],
+                if (onCopy != null)
+                  ListTile(
+                    leading: const Icon(Icons.copy_rounded),
+                    title: const Text('Copy'),
+                    onTap: () {
+                      Navigator.of(context).pop();
+                      onCopy!.call();
+                    },
+                  ),
+                if (onForward != null)
+                  ListTile(
+                    leading: const Icon(Icons.shortcut_rounded),
+                    title: const Text('Forward'),
+                    onTap: () {
+                      Navigator.of(context).pop();
+                      onForward!.call();
+                    },
+                  ),
+                if (onEdit != null)
+                  ListTile(
+                    leading: const Icon(Icons.edit_outlined),
+                    title: const Text('Edit'),
+                    onTap: () {
+                      Navigator.of(context).pop();
+                      onEdit!.call();
+                    },
+                  ),
+                if (mine && onDelete != null)
+                  ListTile(
+                    leading: const Icon(
+                      Icons.delete_outline_rounded,
+                      color: AppColor.danger,
+                    ),
+                    title: const Text(
+                      'Delete',
+                      style: TextStyle(color: AppColor.danger),
+                    ),
+                    onTap: () {
+                      Navigator.of(context).pop();
+                      onDelete!.call();
+                    },
+                  ),
+              ],
+            ),
           ),
         ),
       ),
