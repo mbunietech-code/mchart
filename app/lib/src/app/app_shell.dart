@@ -180,7 +180,7 @@ class _MobileShell extends ConsumerWidget {
       bottomNavigationBar: NavigationBar(
         selectedIndex: selectedIndex,
         // Soft light-blue pill behind the current tab (was near-black).
-        indicatorColor: AppColor.brandSoft,
+        indicatorColor: const Color(0xFFDBEAFE), // light blue (blue-100)
         backgroundColor: AppColor.surface,
         onDestinationSelected: (i) => context.go(destinations[i].path),
         destinations: [
