@@ -141,6 +141,8 @@ class _ListPane extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // Connection status is an admin diagnostic, not something staff need.
+    final isAdmin = ref.watch(currentUserProvider)?.isAdmin ?? false;
     final connected = ref
         .watch(realtimeConnectedProvider)
         .maybeWhen(data: (v) => v, orElse: () => false);
@@ -195,11 +197,12 @@ class _ListPane extends ConsumerWidget {
                     ),
                   ),
                 ),
-                LivePill(
-                  online: connected,
-                  onlineLabel: 'Reverb Active',
-                  offlineLabel: 'Offline',
-                ),
+                if (isAdmin)
+                  LivePill(
+                    online: connected,
+                    onlineLabel: 'Reverb Active',
+                    offlineLabel: 'Offline',
+                  ),
               ],
             ),
           ),
@@ -288,35 +291,36 @@ class _ListPane extends ConsumerWidget {
               },
             ),
           ),
-          const Divider(height: 1),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-            child: Row(
-              children: [
-                Icon(
-                  Icons.dns_rounded,
-                  size: 13,
-                  color: connected ? AppColor.success : AppColor.textMuted,
-                ),
-                const SizedBox(width: 6),
-                Text(
-                  'Reverb Server',
-                  style: Theme.of(
-                    context,
-                  ).textTheme.bodySmall?.copyWith(fontSize: 11),
-                ),
-                const Spacer(),
-                Text(
-                  connected ? 'connected' : 'offline',
-                  style: TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
+          if (isAdmin) const Divider(height: 1),
+          if (isAdmin)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.dns_rounded,
+                    size: 13,
                     color: connected ? AppColor.success : AppColor.textMuted,
                   ),
-                ),
-              ],
+                  const SizedBox(width: 6),
+                  Text(
+                    'Reverb Server',
+                    style: Theme.of(
+                      context,
+                    ).textTheme.bodySmall?.copyWith(fontSize: 11),
+                  ),
+                  const Spacer(),
+                  Text(
+                    connected ? 'connected' : 'offline',
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                      color: connected ? AppColor.success : AppColor.textMuted,
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
         ],
       ),
     );
