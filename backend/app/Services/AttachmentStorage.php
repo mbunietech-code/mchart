@@ -46,11 +46,21 @@ class AttachmentStorage
      */
     public static function url(string $path): string
     {
-        $disk = Storage::disk();
+        if (config('filesystems.disks.'.config('filesystems.default').'.driver') !== 'local'
+            || config('filesystems.default') === 'public') {
+            return Storage::url($path);
+        }
 
-        return $disk->providesTemporaryUrls()
-            ? $disk->temporaryUrl($path, now()->addDay()->endOfDay())
-            : $disk->url($path);
+        // Signature in the path, not the query: Hostinger's CDN strips
+        // query strings from image requests (FileController).
+        $expires = now()->addDay()->endOfDay()->getTimestamp();
+
+        return url("files/{$expires}/".self::signature($path, $expires).'/'.$path);
+    }
+
+    public static function signature(string $path, int $expires): string
+    {
+        return hash_hmac('sha256', "{$path}|{$expires}", (string) config('app.key'));
     }
 
     public function delete(?string $path): void
