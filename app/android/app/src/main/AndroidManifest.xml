@@ -4,6 +4,8 @@
     <uses-permission android:name="android.permission.CAMERA"/>
     <!-- Android 13+: asked at first sign-in so chat pushes can show. -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
+    <!-- Recording voice notes in chat. -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO"/>
     <uses-feature android:name="android.hardware.camera" android:required="false"/>
     <application
         android:label="MChart"

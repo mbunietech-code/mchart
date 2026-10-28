@@ -1,7 +1,11 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:record/record.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/env.dart';
@@ -451,13 +455,83 @@ class _ThreadPaneState extends ConsumerState<_ThreadPane> {
   Message? _editing;
   bool _attaching = false;
   bool _showPanel = false;
+  final _recorder = AudioRecorder();
+  DateTime? _recordingSince;
+  Timer? _recordTick;
 
   @override
   void dispose() {
     _controller.dispose();
     _scroll.dispose();
     _inputFocus.dispose();
+    _recordTick?.cancel();
+    _recorder.dispose();
     super.dispose();
+  }
+
+  bool get _recording => _recordingSince != null;
+
+  int get _recordSeconds => _recordingSince == null
+      ? 0
+      : DateTime.now().difference(_recordingSince!).inSeconds;
+
+  Future<void> _startRecording() async {
+    if (!await _recorder.hasPermission()) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Allow microphone access to record voice notes'),
+          ),
+        );
+      }
+      return;
+    }
+    final dir = await getTemporaryDirectory();
+    final path =
+        '${dir.path}/voice_${DateTime.now().millisecondsSinceEpoch}.m4a';
+    await _recorder.start(
+      const RecordConfig(encoder: AudioEncoder.aacLc, bitRate: 64000),
+      path: path,
+    );
+    _inputFocus.unfocus();
+    setState(() {
+      _recordingSince = DateTime.now();
+      _showPanel = false;
+    });
+    _recordTick = Timer.periodic(
+      const Duration(seconds: 1),
+      (_) => setState(() {}),
+    );
+  }
+
+  Future<void> _cancelRecording() async {
+    _recordTick?.cancel();
+    await _recorder.cancel();
+    if (mounted) setState(() => _recordingSince = null);
+  }
+
+  Future<void> _sendRecording() async {
+    final seconds = _recordSeconds;
+    _recordTick?.cancel();
+    final path = await _recorder.stop();
+    if (!mounted) return;
+    setState(() => _recordingSince = null);
+    if (path == null || seconds < 1) return; // too short to be useful
+    setState(() => _attaching = true);
+    await _thread.send(
+      '',
+      attachmentPath: path,
+      attachmentName: 'Voice note.m4a',
+      attachmentDurationSeconds: seconds,
+      replyTo: _replyTo,
+    );
+    if (mounted) {
+      setState(() {
+        _attaching = false;
+        _replyTo = null;
+      });
+    }
+    _scrollToEnd();
   }
 
   MessageThreadController get _thread =>
@@ -716,7 +790,10 @@ class _ThreadPaneState extends ConsumerState<_ThreadPane> {
           onToggleEmoji: _toggleEmojiPanel,
           onCancelReply: () => setState(() => _replyTo = null),
           onAttach: () => _attach(),
-          onAttachAudio: () => _attach(audioOnly: true),
+          onAttachAudio: _startRecording,
+          recordingSeconds: _recording ? _recordSeconds : null,
+          onCancelRecording: _cancelRecording,
+          onSendRecording: _sendRecording,
           onTyping: () => ref
               .read(messageThreadProvider(widget.conversationId).notifier)
               .notifyTyping(),
@@ -1512,7 +1589,15 @@ class _Composer extends StatelessWidget {
     this.onAttach,
     this.onAttachAudio,
     this.onTyping,
+    this.recordingSeconds,
+    this.onCancelRecording,
+    this.onSendRecording,
   });
+
+  /// Non-null while a voice note is being recorded.
+  final int? recordingSeconds;
+  final VoidCallback? onCancelRecording;
+  final VoidCallback? onSendRecording;
   final TextEditingController controller;
   final FocusNode focusNode;
   final VoidCallback onSend;
@@ -1627,64 +1712,99 @@ class _Composer extends StatelessWidget {
                 ],
               ),
             ),
-          Row(
-            children: [
-              IconButton(
-                tooltip: emojiPanelOpen ? 'Keyboard' : 'Emoji & stickers',
-                onPressed: onToggleEmoji,
-                icon: Icon(
-                  emojiPanelOpen
-                      ? Icons.keyboard_rounded
-                      : Icons.emoji_emotions_outlined,
-                  size: 22,
-                ),
-              ),
-              if (editing == null) ...[
+          if (recordingSeconds != null)
+            Row(
+              children: [
                 IconButton(
-                  tooltip: 'Attach',
-                  onPressed: sending ? null : onAttach,
-                  icon: const Icon(Icons.attach_file_rounded, size: 20),
-                ),
-                IconButton(
-                  tooltip: 'Voice note',
-                  onPressed: sending ? null : onAttachAudio,
-                  icon: const Icon(Icons.mic_none_rounded, size: 20),
-                ),
-              ],
-              Expanded(
-                child: TextField(
-                  controller: controller,
-                  focusNode: focusNode..onKeyEvent = narrow ? null : _onKey,
-                  minLines: 1,
-                  maxLines: 5,
-                  keyboardType: TextInputType.multiline,
-                  textCapitalization: TextCapitalization.sentences,
-                  textInputAction: TextInputAction.send,
-                  onSubmitted: (_) => onSend(),
-                  onChanged: (v) {
-                    if (v.trim().isNotEmpty) onTyping?.call();
-                  },
-                  decoration: const InputDecoration(
-                    hintText: 'Type a message...',
-                    fillColor: AppColor.surfaceMuted,
+                  tooltip: 'Discard',
+                  onPressed: onCancelRecording,
+                  icon: const Icon(
+                    Icons.delete_outline_rounded,
+                    color: AppColor.danger,
                   ),
                 ),
-              ),
-              Gap.sm,
-              FilledButton(
-                onPressed: sending ? null : onSend,
-                style: FilledButton.styleFrom(
-                  minimumSize: const Size(44, 44),
-                  padding: EdgeInsets.zero,
-                  shape: const CircleBorder(),
+                const Icon(
+                  Icons.fiber_manual_record_rounded,
+                  color: AppColor.danger,
+                  size: 14,
                 ),
-                child: Icon(
-                  editing != null ? Icons.check_rounded : Icons.send_rounded,
-                  size: 18,
+                Gap.sm,
+                Expanded(
+                  child: Text(
+                    'Recording  ${Fmt.duration(recordingSeconds)}',
+                    style: const TextStyle(fontWeight: FontWeight.w600),
+                  ),
                 ),
-              ),
-            ],
-          ),
+                FilledButton(
+                  onPressed: onSendRecording,
+                  style: FilledButton.styleFrom(
+                    minimumSize: const Size(44, 44),
+                    padding: EdgeInsets.zero,
+                    shape: const CircleBorder(),
+                  ),
+                  child: const Icon(Icons.send_rounded, size: 18),
+                ),
+              ],
+            )
+          else
+            Row(
+              children: [
+                IconButton(
+                  tooltip: emojiPanelOpen ? 'Keyboard' : 'Emoji & stickers',
+                  onPressed: onToggleEmoji,
+                  icon: Icon(
+                    emojiPanelOpen
+                        ? Icons.keyboard_rounded
+                        : Icons.emoji_emotions_outlined,
+                    size: 22,
+                  ),
+                ),
+                if (editing == null) ...[
+                  IconButton(
+                    tooltip: 'Attach',
+                    onPressed: sending ? null : onAttach,
+                    icon: const Icon(Icons.attach_file_rounded, size: 20),
+                  ),
+                  IconButton(
+                    tooltip: 'Record voice note',
+                    onPressed: sending ? null : onAttachAudio,
+                    icon: const Icon(Icons.mic_none_rounded, size: 20),
+                  ),
+                ],
+                Expanded(
+                  child: TextField(
+                    controller: controller,
+                    focusNode: focusNode..onKeyEvent = narrow ? null : _onKey,
+                    minLines: 1,
+                    maxLines: 5,
+                    keyboardType: TextInputType.multiline,
+                    textCapitalization: TextCapitalization.sentences,
+                    textInputAction: TextInputAction.send,
+                    onSubmitted: (_) => onSend(),
+                    onChanged: (v) {
+                      if (v.trim().isNotEmpty) onTyping?.call();
+                    },
+                    decoration: const InputDecoration(
+                      hintText: 'Type a message...',
+                      fillColor: AppColor.surfaceMuted,
+                    ),
+                  ),
+                ),
+                Gap.sm,
+                FilledButton(
+                  onPressed: sending ? null : onSend,
+                  style: FilledButton.styleFrom(
+                    minimumSize: const Size(44, 44),
+                    padding: EdgeInsets.zero,
+                    shape: const CircleBorder(),
+                  ),
+                  child: Icon(
+                    editing != null ? Icons.check_rounded : Icons.send_rounded,
+                    size: 18,
+                  ),
+                ),
+              ],
+            ),
           if (!narrow)
             Padding(
               padding: const EdgeInsets.only(top: 4),

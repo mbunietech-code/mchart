@@ -15,3 +15,6 @@ key.properties
 
 # Firebase client config for project mchart-92542; the repo is public.
 app/google-services.json
+
+# Kotlin compiler session files
+.kotlin/
