@@ -179,6 +179,9 @@ class _MobileShell extends ConsumerWidget {
       body: child,
       bottomNavigationBar: NavigationBar(
         selectedIndex: selectedIndex,
+        // Soft light-blue pill behind the current tab (was near-black).
+        indicatorColor: AppColor.brandSoft,
+        backgroundColor: AppColor.surface,
         onDestinationSelected: (i) => context.go(destinations[i].path),
         destinations: [
           for (final d in destinations)
