@@ -47,7 +47,11 @@ Future<PickedAttachment?> pickChatAttachment(
         );
         return x == null ? null : PickedAttachment(x.path, x.name);
       case _Source.cameraVideo:
-        final x = await ImagePicker().pickVideo(source: ImageSource.camera);
+        // Short clips like WhatsApp; also keeps uploads under the 50 MB limit.
+        final x = await ImagePicker().pickVideo(
+          source: ImageSource.camera,
+          maxDuration: const Duration(minutes: 3),
+        );
         return x == null ? null : PickedAttachment(x.path, x.name);
       case _Source.gallery:
         final x = await ImagePicker().pickMedia(imageQuality: 85);

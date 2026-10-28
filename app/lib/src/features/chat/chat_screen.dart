@@ -8,6 +8,7 @@ import 'package:go_router/go_router.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:record/record.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:video_player/video_player.dart';
 
 import '../../core/env.dart';
 import '../../core/format.dart';
@@ -1485,6 +1486,55 @@ class _Attachment extends StatelessWidget {
         ),
       );
     }
+    if (attachment.isVideo) {
+      return GestureDetector(
+        onTap: () => Navigator.of(context, rootNavigator: true).push(
+          MaterialPageRoute<void>(
+            fullscreenDialog: true,
+            builder: (_) => _VideoViewer(url: _absoluteUrl.toString()),
+          ),
+        ),
+        child: Container(
+          width: 240,
+          height: 140,
+          decoration: BoxDecoration(
+            color: Colors.black87,
+            borderRadius: AppRadius.md,
+          ),
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              const Icon(
+                Icons.play_circle_fill_rounded,
+                size: 52,
+                color: Colors.white,
+              ),
+              Positioned(
+                left: 10,
+                bottom: 8,
+                child: Row(
+                  children: [
+                    const Icon(
+                      Icons.videocam_rounded,
+                      size: 14,
+                      color: Colors.white70,
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      Fmt.fileSize(attachment.fileSize),
+                      style: const TextStyle(
+                        color: Colors.white70,
+                        fontSize: 11,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
     if (attachment.isVoice) {
       return _VoiceNote(
         url: _absoluteUrl.toString(),
@@ -1578,6 +1628,129 @@ class _Attachment extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+/// Full-screen in-app video player: tap to play/pause, seekable bar.
+class _VideoViewer extends StatefulWidget {
+  const _VideoViewer({required this.url});
+  final String url;
+
+  @override
+  State<_VideoViewer> createState() => _VideoViewerState();
+}
+
+class _VideoViewerState extends State<_VideoViewer> {
+  late final VideoPlayerController _c = VideoPlayerController.networkUrl(
+    Uri.parse(widget.url),
+  );
+  bool _failed = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _c.addListener(_onTick);
+    _c.initialize().then(
+      (_) {
+        if (mounted) {
+          setState(() {});
+          _c.play();
+        }
+      },
+      onError: (_) {
+        if (mounted) setState(() => _failed = true);
+      },
+    );
+  }
+
+  void _onTick() {
+    if (mounted) setState(() {});
+  }
+
+  @override
+  void dispose() {
+    _c.removeListener(_onTick);
+    _c.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final v = _c.value;
+    return Scaffold(
+      backgroundColor: Colors.black,
+      appBar: AppBar(
+        backgroundColor: Colors.black,
+        foregroundColor: Colors.white,
+      ),
+      body: _failed
+          ? const Center(
+              child: Text(
+                'Could not play this video',
+                style: TextStyle(color: Colors.white70),
+              ),
+            )
+          : !v.isInitialized
+          ? const Center(child: CircularProgressIndicator(color: Colors.white))
+          : GestureDetector(
+              onTap: () => v.isPlaying ? _c.pause() : _c.play(),
+              child: Column(
+                children: [
+                  Expanded(
+                    child: Center(
+                      child: AspectRatio(
+                        aspectRatio: v.aspectRatio,
+                        child: Stack(
+                          alignment: Alignment.center,
+                          children: [
+                            VideoPlayer(_c),
+                            if (!v.isPlaying)
+                              const Icon(
+                                Icons.play_circle_fill_rounded,
+                                size: 64,
+                                color: Colors.white70,
+                              ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                  SafeArea(
+                    top: false,
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+                      child: Row(
+                        children: [
+                          Text(
+                            Fmt.duration(v.position.inSeconds),
+                            style: const TextStyle(color: Colors.white70),
+                          ),
+                          Expanded(
+                            child: VideoProgressIndicator(
+                              _c,
+                              allowScrubbing: true,
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                              ),
+                              colors: const VideoProgressColors(
+                                playedColor: Colors.white,
+                                bufferedColor: Colors.white38,
+                                backgroundColor: Colors.white12,
+                              ),
+                            ),
+                          ),
+                          Text(
+                            Fmt.duration(v.duration.inSeconds),
+                            style: const TextStyle(color: Colors.white70),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
     );
   }
 }
