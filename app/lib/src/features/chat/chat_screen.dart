@@ -221,10 +221,15 @@ class _ListPane extends ConsumerWidget {
                                 .contains(search.toLowerCase()),
                           )
                           .toList();
-                final channels = filtered
+                final showArchived = ref.watch(showArchivedProvider);
+                final archivedCount = filtered.where((c) => c.archived).length;
+                final visible = filtered
+                    .where((c) => c.archived == showArchived)
+                    .toList();
+                final channels = visible
                     .where((c) => c.type != ConversationType.direct)
                     .toList();
-                final dms = filtered
+                final dms = visible
                     .where((c) => c.type == ConversationType.direct)
                     .toList();
 
@@ -238,6 +243,24 @@ class _ListPane extends ConsumerWidget {
                 return ListView(
                   padding: const EdgeInsets.only(bottom: 8),
                   children: [
+                    if (showArchived || archivedCount > 0)
+                      ListTile(
+                        dense: true,
+                        leading: Icon(
+                          showArchived
+                              ? Icons.arrow_back_rounded
+                              : Icons.archive_outlined,
+                          size: 20,
+                        ),
+                        title: Text(
+                          showArchived
+                              ? 'Back to chats'
+                              : 'Archived ($archivedCount)',
+                        ),
+                        onTap: () =>
+                            ref.read(showArchivedProvider.notifier).state =
+                                !showArchived,
+                      ),
                     if (channels.isNotEmpty) ...[
                       const _SectionLabel('Departments & Channels'),
                       for (final c in channels)
@@ -246,6 +269,7 @@ class _ListPane extends ConsumerWidget {
                           selected: c.id == selectedId,
                           currentUserId: currentUserId,
                           onTap: () => onSelect(c.id),
+                          onLongPress: () => showChatOptions(context, ref, c),
                         ),
                     ],
                     if (dms.isNotEmpty) ...[
@@ -256,6 +280,7 @@ class _ListPane extends ConsumerWidget {
                           selected: c.id == selectedId,
                           currentUserId: currentUserId,
                           onTap: () => onSelect(c.id),
+                          onLongPress: () => showChatOptions(context, ref, c),
                         ),
                     ],
                   ],
@@ -318,12 +343,14 @@ class _ConversationRow extends StatelessWidget {
     required this.selected,
     required this.currentUserId,
     required this.onTap,
+    this.onLongPress,
   });
 
   final Conversation conversation;
   final bool selected;
   final int currentUserId;
   final VoidCallback onTap;
+  final VoidCallback? onLongPress;
 
   @override
   Widget build(BuildContext context) {
@@ -335,6 +362,7 @@ class _ConversationRow extends StatelessWidget {
 
     return InkWell(
       onTap: onTap,
+      onLongPress: onLongPress,
       child: Container(
         color: selected ? AppColor.brandSoft : null,
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
@@ -396,6 +424,24 @@ class _ConversationRow extends StatelessWidget {
                           ).textTheme.bodySmall?.copyWith(fontSize: 11.5),
                         ),
                       ),
+                      if (conversation.muted)
+                        const Padding(
+                          padding: EdgeInsets.only(right: 4),
+                          child: Icon(
+                            Icons.volume_off_rounded,
+                            size: 14,
+                            color: AppColor.textMuted,
+                          ),
+                        ),
+                      if (conversation.pinned)
+                        const Padding(
+                          padding: EdgeInsets.only(right: 4),
+                          child: Icon(
+                            Icons.push_pin_rounded,
+                            size: 14,
+                            color: AppColor.textMuted,
+                          ),
+                        ),
                       if (conversation.unreadCount > 0)
                         CountBadge(
                           conversation.unreadCount,
@@ -913,6 +959,12 @@ class _ThreadHeader extends StatelessWidget {
             ),
           ),
           const Spacer(),
+          if (conv != null)
+            IconButton(
+              tooltip: 'Search messages',
+              onPressed: () => showMessageSearch(context, conv.id),
+              icon: const Icon(Icons.search_rounded, size: 20),
+            ),
           if (isChannel)
             IconButton(
               tooltip: 'Group info',
@@ -920,12 +972,193 @@ class _ThreadHeader extends StatelessWidget {
                   ? null
                   : () => showGroupInfoSheet(context, conv),
               icon: const Icon(Icons.info_outline_rounded, size: 19),
-            )
-          else
-            IconButton(
-              onPressed: () {},
-              icon: const Icon(Icons.more_vert_rounded, size: 19),
             ),
+          if (conv != null)
+            Consumer(
+              builder: (context, ref, _) => IconButton(
+                tooltip: 'Chat options',
+                onPressed: () => showChatOptions(context, ref, conv),
+                icon: const Icon(Icons.more_vert_rounded, size: 19),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Pin / mute / archive for this user (long-press a chat, or ⋮ in it).
+Future<void> showChatOptions(
+  BuildContext context,
+  WidgetRef ref,
+  Conversation c,
+) async {
+  final choice = await showModalBottomSheet<String>(
+    context: context,
+    builder: (sheet) => SafeArea(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          ListTile(
+            leading: Icon(
+              c.pinned ? Icons.push_pin_outlined : Icons.push_pin_rounded,
+            ),
+            title: Text(c.pinned ? 'Unpin chat' : 'Pin chat'),
+            onTap: () => Navigator.pop(sheet, 'pin'),
+          ),
+          ListTile(
+            leading: Icon(
+              c.muted ? Icons.volume_up_rounded : Icons.volume_off_rounded,
+            ),
+            title: Text(
+              c.muted ? 'Unmute notifications' : 'Mute notifications',
+            ),
+            onTap: () => Navigator.pop(sheet, 'mute'),
+          ),
+          ListTile(
+            leading: Icon(
+              c.archived ? Icons.unarchive_outlined : Icons.archive_outlined,
+            ),
+            title: Text(c.archived ? 'Unarchive chat' : 'Archive chat'),
+            onTap: () => Navigator.pop(sheet, 'archive'),
+          ),
+        ],
+      ),
+    ),
+  );
+  if (choice == null) return;
+  final repo = ref.read(chatRepositoryProvider);
+  final messenger = ScaffoldMessenger.of(context);
+  try {
+    switch (choice) {
+      case 'pin':
+        await repo.setPreferences(c.id, pinned: !c.pinned);
+      case 'mute':
+        await repo.setPreferences(c.id, muted: !c.muted);
+      case 'archive':
+        await repo.setPreferences(c.id, archived: !c.archived);
+    }
+    ref.invalidate(conversationsProvider);
+    messenger.showSnackBar(
+      SnackBar(
+        content: Text(switch (choice) {
+          'pin' => c.pinned ? 'Chat unpinned' : 'Chat pinned',
+          'mute' => c.muted ? 'Notifications on' : 'Chat muted',
+          _ => c.archived ? 'Chat unarchived' : 'Chat archived',
+        }),
+      ),
+    );
+  } catch (e) {
+    messenger.showSnackBar(SnackBar(content: Text('$e')));
+  }
+}
+
+/// Search text messages in one chat.
+Future<void> showMessageSearch(BuildContext context, int conversationId) {
+  return showModalBottomSheet<void>(
+    context: context,
+    isScrollControlled: true,
+    useSafeArea: true,
+    builder: (_) => _MessageSearchSheet(conversationId: conversationId),
+  );
+}
+
+class _MessageSearchSheet extends ConsumerStatefulWidget {
+  const _MessageSearchSheet({required this.conversationId});
+  final int conversationId;
+
+  @override
+  ConsumerState<_MessageSearchSheet> createState() =>
+      _MessageSearchSheetState();
+}
+
+class _MessageSearchSheetState extends ConsumerState<_MessageSearchSheet> {
+  Timer? _debounce;
+  List<Message>? _results;
+  bool _loading = false;
+  String _query = '';
+
+  @override
+  void dispose() {
+    _debounce?.cancel();
+    super.dispose();
+  }
+
+  void _onChanged(String v) {
+    _debounce?.cancel();
+    _debounce = Timer(const Duration(milliseconds: 350), () => _run(v.trim()));
+  }
+
+  Future<void> _run(String q) async {
+    setState(() => _query = q);
+    if (q.length < 2) return setState(() => _results = null);
+    setState(() => _loading = true);
+    try {
+      final r = await ref
+          .read(chatRepositoryProvider)
+          .searchMessages(widget.conversationId, q);
+      if (mounted && q == _query) setState(() => _results = r);
+    } catch (_) {
+      if (mounted) setState(() => _results = const []);
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final t = Theme.of(context).textTheme;
+    return SizedBox(
+      height: MediaQuery.sizeOf(context).height * 0.75,
+      child: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: TextField(
+              autofocus: true,
+              decoration: InputDecoration(
+                hintText: 'Search messages...',
+                prefixIcon: const Icon(Icons.search_rounded, size: 18),
+                suffixIcon: _loading
+                    ? const Padding(
+                        padding: EdgeInsets.all(12),
+                        child: SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        ),
+                      )
+                    : null,
+              ),
+              onChanged: _onChanged,
+            ),
+          ),
+          Expanded(
+            child: _results == null
+                ? Center(
+                    child: Text('Type at least 2 letters', style: t.bodySmall),
+                  )
+                : _results!.isEmpty
+                ? Center(child: Text('No messages found', style: t.bodySmall))
+                : ListView.separated(
+                    itemCount: _results!.length,
+                    separatorBuilder: (_, _) => const Divider(height: 1),
+                    itemBuilder: (_, i) {
+                      final m = _results![i];
+                      return ListTile(
+                        title: Text(
+                          m.body ?? '',
+                          maxLines: 3,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        subtitle: Text(
+                          '${m.sender?.name ?? ''} • '
+                          '${Fmt.shortDate(m.createdAt)} ${Fmt.time(m.createdAt)}',
+                        ),
+                      );
+                    },
+                  ),
+          ),
         ],
       ),
     );

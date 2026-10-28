@@ -55,6 +55,17 @@ class DirectoryRepository {
 
   Future<void> deactivateUser(int id) => _api.delete('/users/$id');
 
+  Future<CreatedUser> resendInvitation(User user) async {
+    final json = await _api.post<Map<String, dynamic>>(
+      '/users/${user.id}/resend-invitation',
+    );
+    return (
+      user: user,
+      temporaryPassword: json['temporary_password'] as String?,
+      invitationSent: json['invitation_sent'] as bool? ?? false,
+    );
+  }
+
   /// Only for accounts with no history; the server refuses the rest.
   Future<void> deleteUserPermanently(int id) =>
       _api.delete('/users/$id/permanent');

@@ -209,6 +209,7 @@ class _MobileUserButton extends ConsumerWidget {
       position: PopupMenuPosition.under,
       onSelected: (v) {
         if (v == 'logout') ref.read(authControllerProvider.notifier).logout();
+        if (v == 'profile') context.go('/profile');
       },
       itemBuilder: (context) => [
         PopupMenuItem(
@@ -216,6 +217,7 @@ class _MobileUserButton extends ConsumerWidget {
           child: Text(user.email, style: Theme.of(context).textTheme.bodySmall),
         ),
         const PopupMenuDivider(),
+        const PopupMenuItem(value: 'profile', child: Text('My profile')),
         const PopupMenuItem(value: 'logout', child: Text('Sign out')),
       ],
       child: AppAvatar.forUser(user, size: 30),
@@ -421,6 +423,7 @@ class _UserCard extends ConsumerWidget {
       position: PopupMenuPosition.over,
       onSelected: (v) {
         if (v == 'logout') ref.read(authControllerProvider.notifier).logout();
+        if (v == 'profile') context.go('/profile');
       },
       itemBuilder: (context) => [
         PopupMenuItem(
@@ -428,6 +431,7 @@ class _UserCard extends ConsumerWidget {
           child: Text(user.email, style: Theme.of(context).textTheme.bodySmall),
         ),
         const PopupMenuDivider(),
+        const PopupMenuItem(value: 'profile', child: Text('My profile')),
         const PopupMenuItem(value: 'logout', child: Text('Sign out')),
       ],
       child: Padding(

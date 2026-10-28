@@ -15,6 +15,7 @@ class UserResource extends JsonResource
             'name' => $this->name,
             'email' => $this->email,
             'phone' => $this->phone,
+            'avatar_url' => $this->avatar_path ? \App\Services\AttachmentStorage::url($this->avatar_path) : null,
             'role' => $this->roleEnum()?->value,
             'role_label' => $this->roleEnum()?->label(),
             'status' => $this->status,

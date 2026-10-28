@@ -17,7 +17,7 @@ class AppAvatar extends StatelessWidget {
     : label = user.initials,
       online = showPresence == true ? user.isOnline : null,
       color = _colorFor(user.id),
-      imageUrl = null;
+      imageUrl = user.avatarUrl;
 
   final String label;
   final double size;

@@ -38,6 +38,9 @@ class MessageController extends Controller
             ->with(['sender', 'attachments', 'replyTo.sender', 'reactions'])
             ->latest('id')
             ->when($request->filled('before'), fn ($q) => $q->where('id', '<', $request->integer('before')))
+            // In-chat search: matching text messages, newest first.
+            ->when($request->filled('search'), fn ($q) => $q->whereNull('deleted_at')
+                ->where('body', 'like', '%'.addcslashes($request->string('search'), '%_'.chr(92)).'%'))
             ->limit($request->integer('limit', 30))
             ->get()
             ->reverse()
@@ -202,8 +205,10 @@ class MessageController extends Controller
 
     private function notifyParticipants(Conversation $conversation, Message $message): void
     {
+        // Muted chats still count as unread, but don't notify (like WhatsApp).
         $recipients = $conversation->users()
             ->where('users.id', '!=', $message->sender_id)
+            ->where('conversation_participants.muted', false)
             ->get();
 
         $preview = match (true) {

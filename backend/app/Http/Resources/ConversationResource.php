@@ -26,6 +26,10 @@ class ConversationResource extends JsonResource
             ),
             'latest_message' => new MessageResource($this->whenLoaded('latestMessage', fn () => $this->latestMessage->first())),
             'unread_count' => $this->when(isset($this->unread_count), fn () => (int) $this->unread_count),
+            // The requesting user's own list preferences (index only).
+            'pinned' => $this->when(array_key_exists('my_pinned_at', $this->getAttributes()), fn () => $this->my_pinned_at !== null),
+            'archived' => $this->when(array_key_exists('my_archived_at', $this->getAttributes()), fn () => $this->my_archived_at !== null),
+            'muted' => $this->when(array_key_exists('my_muted', $this->getAttributes()), fn () => (bool) $this->my_muted),
             'created_at' => $this->created_at,
         ];
     }

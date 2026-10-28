@@ -132,6 +132,24 @@ class UserController extends Controller
     }
 
     /**
+     * New temporary password, emailed again. Only while the person hasn't
+     * chosen their own yet (never resets someone's real password).
+     */
+    public function resendInvitation(Request $request, User $user): JsonResponse
+    {
+        abort_unless($user->must_change_password, 422, 'This user has already set their own password.');
+
+        $temporary = self::temporaryPassword();
+        $user->forceFill(['password' => $temporary])->save();
+        $user->tokens()->delete();
+
+        return response()->json([
+            'invitation_sent' => $this->sendInvitation($user, $temporary, $request->user()->name),
+            'temporary_password' => $temporary,
+        ]);
+    }
+
+    /**
      * Permanently remove an account that was never really used (typically a
      * mistyped or unwanted invitation), freeing its email for a new invite.
      * Anyone with history is refused: deleting them would cascade away tasks

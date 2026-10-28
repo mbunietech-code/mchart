@@ -190,10 +190,18 @@ class Conversation {
     this.participants = const [],
     this.participantRoles = const {},
     this.latestMessage,
+    this.pinned = false,
+    this.archived = false,
+    this.muted = false,
   });
 
   final int id;
   final ConversationType type;
+
+  /// The current user's own list preferences.
+  final bool pinned;
+  final bool archived;
+  final bool muted;
   final String? name;
   final int? departmentId;
   final int? createdBy;
@@ -238,6 +246,9 @@ class Conversation {
     latestMessage: j['latest_message'] is Map
         ? Message.fromJson(j['latest_message'] as Map<String, dynamic>)
         : null,
+    pinned: j['pinned'] as bool? ?? false,
+    archived: j['archived'] as bool? ?? false,
+    muted: j['muted'] as bool? ?? false,
   );
 
   Conversation copyWith({

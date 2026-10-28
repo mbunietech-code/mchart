@@ -86,7 +86,7 @@ class _UserFormState extends ConsumerState<_UserForm> {
         nav.pop();
         await showDialog<void>(
           context: nav.context,
-          builder: (_) => _InvitedDialog(created: created),
+          builder: (_) => InvitedDialog(created: created),
         );
       }
     } on ApiException catch (e) {
@@ -225,8 +225,8 @@ class _UserFormState extends ConsumerState<_UserForm> {
 
 /// Shown once after inviting: whether the email went out, and the
 /// temporary password so the admin can pass it on if it didn't.
-class _InvitedDialog extends StatelessWidget {
-  const _InvitedDialog({required this.created});
+class InvitedDialog extends StatelessWidget {
+  const InvitedDialog({required this.created});
   final CreatedUser created;
 
   @override

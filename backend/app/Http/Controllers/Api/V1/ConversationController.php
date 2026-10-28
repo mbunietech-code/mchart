@@ -19,10 +19,15 @@ class ConversationController extends Controller
         $user = $request->user();
 
         $conversations = Conversation::query()
-            ->whereHas('participants', fn ($q) => $q->where('user_id', $user->id))
+            ->join('conversation_participants as me', function ($join) use ($user) {
+                $join->on('me.conversation_id', '=', 'conversations.id')->where('me.user_id', '=', $user->id);
+            })
+            ->select('conversations.*', 'me.pinned_at as my_pinned_at', 'me.archived_at as my_archived_at', 'me.muted as my_muted')
             ->with(['users', 'latestMessage.sender'])
+            // Pinned chats first (newest pin on top), then by activity.
+            ->orderByRaw('me.pinned_at IS NULL, me.pinned_at DESC')
             ->orderByRaw('last_message_at IS NULL, last_message_at DESC')
-            ->orderByDesc('id')
+            ->orderByDesc('conversations.id')
             ->paginate($request->integer('per_page', 30));
 
         // Attach unread counts in one extra query.
@@ -95,6 +100,35 @@ class ConversationController extends Controller
         $this->authorize('view', $conversation);
 
         return new ConversationResource($conversation->load(['users', 'latestMessage.sender']));
+    }
+
+    /** This user's pin / archive / mute for the chat (others unaffected). */
+    public function preferences(Request $request, Conversation $conversation): JsonResponse
+    {
+        $data = $request->validate([
+            'pinned' => ['sometimes', 'boolean'],
+            'archived' => ['sometimes', 'boolean'],
+            'muted' => ['sometimes', 'boolean'],
+        ]);
+
+        $participant = $conversation->participants()->where('user_id', $request->user()->id)->firstOrFail();
+        $changes = [];
+        if (array_key_exists('pinned', $data)) {
+            $changes['pinned_at'] = $data['pinned'] ? now() : null;
+        }
+        if (array_key_exists('archived', $data)) {
+            $changes['archived_at'] = $data['archived'] ? now() : null;
+        }
+        if (array_key_exists('muted', $data)) {
+            $changes['muted'] = $data['muted'];
+        }
+        $participant->update($changes);
+
+        return response()->json(['data' => [
+            'pinned' => $participant->pinned_at !== null,
+            'archived' => $participant->archived_at !== null,
+            'muted' => (bool) $participant->muted,
+        ]]);
     }
 
     public function update(Request $request, Conversation $conversation): ConversationResource

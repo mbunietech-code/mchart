@@ -271,6 +271,7 @@ class _NotificationRow extends StatelessWidget {
     'task_comment' => (Icons.mode_comment_outlined, AppColor.slate),
     'new_message' => (Icons.chat_bubble_outline_rounded, AppColor.brand),
     'announcement' => (Icons.campaign_outlined, AppColor.urgent),
+    'task_deadline' => (Icons.alarm_rounded, AppColor.danger),
     _ => (Icons.notifications_none_rounded, AppColor.slate),
   };
 }

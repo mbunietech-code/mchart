@@ -10,6 +10,7 @@ import '../features/dashboard/dashboard_screen.dart';
 import '../features/settings/settings_screen.dart';
 import '../features/tasks/task_detail_screen.dart';
 import '../features/tasks/tasks_screen.dart';
+import '../features/profile/profile_screen.dart';
 import '../features/status/status_screen.dart';
 import '../models/enums.dart';
 import 'app_shell.dart';
@@ -99,6 +100,11 @@ final routerProvider = Provider<GoRouter>((ref) {
                 conversationId: int.tryParse(s.uri.queryParameters['c'] ?? ''),
               ),
             ),
+          ),
+          GoRoute(
+            path: '/profile',
+            pageBuilder: (c, s) =>
+                const NoTransitionPage(child: ProfileScreen()),
           ),
           GoRoute(
             path: '/status',

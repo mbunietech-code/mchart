@@ -474,6 +474,21 @@ class _UserRow extends ConsumerWidget {
                     {'status': user.isActive ? 'inactive' : 'active'},
                   );
                   ref.invalidate(usersProvider);
+                } else if (v == 'resend' && context.mounted) {
+                  final messenger = ScaffoldMessenger.of(context);
+                  try {
+                    final created = await ref
+                        .read(directoryRepositoryProvider)
+                        .resendInvitation(user);
+                    if (context.mounted) {
+                      await showDialog<void>(
+                        context: context,
+                        builder: (_) => InvitedDialog(created: created),
+                      );
+                    }
+                  } on ApiException catch (e) {
+                    messenger.showSnackBar(SnackBar(content: Text(e.message)));
+                  }
                 } else if (v == 'delete' && context.mounted) {
                   await confirmDeleteUser(context, ref, user);
                 }
@@ -486,6 +501,11 @@ class _UserRow extends ConsumerWidget {
                     user.isActive ? 'Deactivate account' : 'Activate account',
                   ),
                 ),
+                if (user.mustChangePassword)
+                  const PopupMenuItem(
+                    value: 'resend',
+                    child: Text('Resend invitation'),
+                  ),
                 if (user.id != ref.read(currentUserProvider)?.id)
                   const PopupMenuItem(
                     value: 'delete',
@@ -555,6 +575,23 @@ class _UserCard extends ConsumerWidget {
                       {'status': user.isActive ? 'inactive' : 'active'},
                     );
                     ref.invalidate(usersProvider);
+                  } else if (v == 'resend' && context.mounted) {
+                    final messenger = ScaffoldMessenger.of(context);
+                    try {
+                      final created = await ref
+                          .read(directoryRepositoryProvider)
+                          .resendInvitation(user);
+                      if (context.mounted) {
+                        await showDialog<void>(
+                          context: context,
+                          builder: (_) => InvitedDialog(created: created),
+                        );
+                      }
+                    } on ApiException catch (e) {
+                      messenger.showSnackBar(
+                        SnackBar(content: Text(e.message)),
+                      );
+                    }
                   } else if (v == 'delete' && context.mounted) {
                     await confirmDeleteUser(context, ref, user);
                   }
@@ -567,6 +604,11 @@ class _UserCard extends ConsumerWidget {
                       user.isActive ? 'Deactivate account' : 'Activate account',
                     ),
                   ),
+                  if (user.mustChangePassword)
+                    const PopupMenuItem(
+                      value: 'resend',
+                      child: Text('Resend invitation'),
+                    ),
                   if (user.id != ref.read(currentUserProvider)?.id)
                     const PopupMenuItem(
                       value: 'delete',

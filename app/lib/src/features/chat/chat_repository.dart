@@ -82,6 +82,24 @@ class ChatRepository {
     return Message.fromJson(json['data'] as Map<String, dynamic>);
   }
 
+  Future<void> setPreferences(
+    int conversationId, {
+    bool? pinned,
+    bool? archived,
+    bool? muted,
+  }) => _api.patch(
+    '/conversations/$conversationId/preferences',
+    data: {'pinned': ?pinned, 'archived': ?archived, 'muted': ?muted},
+  );
+
+  Future<List<Message>> searchMessages(int conversationId, String q) async {
+    final json = await _api.get<Map<String, dynamic>>(
+      '/conversations/$conversationId/messages',
+      query: {'search': q, 'limit': 50},
+    );
+    return Paginated.listOf(json, Message.fromJson).reversed.toList();
+  }
+
   Future<void> hideMessage(int conversationId, int messageId) =>
       _api.post('/conversations/$conversationId/messages/$messageId/hide');
 
@@ -154,6 +172,9 @@ class ChatRepository {
 final chatRepositoryProvider = Provider(
   (ref) => ChatRepository(ref.watch(apiClientProvider)),
 );
+
+/// Chat list shows archived chats instead of the active ones.
+final showArchivedProvider = StateProvider<bool>((ref) => false);
 
 final conversationsProvider = FutureProvider<List<Conversation>>((ref) {
   // No WebSocket to push unread counts / last-message previews: refetch.

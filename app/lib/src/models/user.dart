@@ -33,6 +33,7 @@ class User {
     this.department,
     this.lastSeenAt,
     this.mustChangePassword = false,
+    this.avatarUrl,
   });
 
   final int id;
@@ -47,6 +48,9 @@ class User {
 
   /// Signed in with a temporary password; must choose one before anything else.
   final bool mustChangePassword;
+
+  /// Profile photo, already a full (signed) URL.
+  final String? avatarUrl;
 
   bool get isActive => status == 'active';
   bool get isOnline =>
@@ -82,6 +86,7 @@ class User {
         : null,
     lastSeenAt: _date(j['last_seen_at']),
     mustChangePassword: j['must_change_password'] as bool? ?? false,
+    avatarUrl: j['avatar_url'] as String?,
   );
 }
 

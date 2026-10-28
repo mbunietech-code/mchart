@@ -11,6 +11,7 @@ use App\Http\Controllers\Api\V1\DeviceController;
 use App\Http\Controllers\Api\V1\MessageController;
 use App\Http\Controllers\Api\V1\MessageReactionController;
 use App\Http\Controllers\Api\V1\NotificationController;
+use App\Http\Controllers\Api\V1\ProfileController;
 use App\Http\Controllers\Api\V1\RoleController;
 use App\Http\Controllers\Api\V1\TaskAttachmentController;
 use App\Http\Controllers\Api\V1\TaskCommentController;
@@ -37,6 +38,9 @@ Route::middleware(['auth:sanctum', 'active', 'password.changed'])->group(functio
     Route::post('auth/password/change', [AuthController::class, 'changePassword'])
         ->middleware('throttle:6,1');
     Route::get('me', [AuthController::class, 'me']);
+    Route::patch('me', [ProfileController::class, 'update']);
+    Route::post('me/avatar', [ProfileController::class, 'avatar']);
+    Route::delete('me/avatar', [ProfileController::class, 'removeAvatar']);
 
     // Devices (push registration)
     Route::post('devices', [DeviceController::class, 'store']);
@@ -55,6 +59,7 @@ Route::middleware(['auth:sanctum', 'active', 'password.changed'])->group(functio
         Route::patch('users/{user}', [UserController::class, 'update']);
         Route::delete('users/{user}', [UserController::class, 'destroy']);
         Route::delete('users/{user}/permanent', [UserController::class, 'forceDestroy']);
+        Route::post('users/{user}/resend-invitation', [UserController::class, 'resendInvitation']);
         Route::post('departments', [DepartmentController::class, 'store']);
         Route::patch('departments/{department}', [DepartmentController::class, 'update']);
         Route::delete('departments/{department}', [DepartmentController::class, 'destroy']);
@@ -65,6 +70,7 @@ Route::middleware(['auth:sanctum', 'active', 'password.changed'])->group(functio
     Route::post('conversations', [ConversationController::class, 'store']);
     Route::get('conversations/{conversation}', [ConversationController::class, 'show']);
     Route::patch('conversations/{conversation}', [ConversationController::class, 'update']);
+    Route::patch('conversations/{conversation}/preferences', [ConversationController::class, 'preferences']);
     Route::post('conversations/{conversation}/participants', [ConversationParticipantController::class, 'store']);
     Route::delete('conversations/{conversation}/participants/{user}', [ConversationParticipantController::class, 'destroy']);
     Route::get('conversations/{conversation}/messages', [MessageController::class, 'index']);
