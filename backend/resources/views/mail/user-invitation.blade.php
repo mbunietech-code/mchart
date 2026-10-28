@@ -5,9 +5,11 @@
 
 **1. Download the app**
 
-<x-mail::button :url="$downloadUrl">
-Download MChart for Android
+<x-mail::button :url="$apkUrl">
+Download MChart for Android (v{{ $version }})
 </x-mail::button>
+
+On a Windows PC: [download the installer (v{{ $version }})]({{ $windowsUrl }}). All downloads: [{{ $downloadUrl }}]({{ $downloadUrl }})
 
 @if ($webUrl)
 On a computer you can also use it in the browser: [{{ $webUrl }}]({{ $webUrl }})

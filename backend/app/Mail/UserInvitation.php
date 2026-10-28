@@ -35,6 +35,9 @@ class UserInvitation extends Mailable
             markdown: 'mail.user-invitation',
             with: [
                 'downloadUrl' => config('mchart.download_url'),
+                'version' => config('mchart.app_version'),
+                'apkUrl' => asset('downloads/mchart.apk'),
+                'windowsUrl' => asset('downloads/MChart-Setup.exe'),
                 'webUrl' => config('mchart.web_url'),
             ],
         );

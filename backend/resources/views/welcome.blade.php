@@ -97,7 +97,9 @@
 
     @php
         $apkPath = public_path('downloads/mchart.apk');
-        $msiPath = public_path('downloads/mchart-setup.msi');
+        // One-file .exe installer (Inno Setup); the old MSI is the fallback.
+        $winFile = file_exists(public_path('downloads/MChart-Setup.exe')) ? 'MChart-Setup.exe' : 'mchart-setup.msi';
+        $msiPath = public_path('downloads/'.$winFile);
         $apkExists = file_exists($apkPath);
         $msiExists = file_exists($msiPath);
         $fmtSize = fn ($bytes) => number_format($bytes / 1048576, 1) . ' MB';
@@ -135,7 +137,7 @@
             <h2>Windows</h2>
             <p class="desc">Run the installer and choose where MChart gets installed on your PC.</p>
             @if ($msiExists)
-                <a class="btn btn-primary" href="{{ asset('downloads/mchart-setup.msi') }}">Download Installer ↓</a>
+                <a class="btn btn-primary" href="{{ asset('downloads/'.$winFile) }}">Download Installer ↓</a>
                 <p class="meta">{{ $fmtSize(filesize($msiPath)) }} · v{{ config('mchart.app_version', '1.0.0') }}</p>
             @else
                 <a class="btn btn-disabled">Coming soon</a>
