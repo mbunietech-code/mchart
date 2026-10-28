@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -1445,7 +1446,7 @@ class _Attachment extends StatelessWidget {
   Widget build(BuildContext context) {
     if (attachment.isImage) {
       return GestureDetector(
-        onTap: _open,
+        onTap: () => _viewImage(context),
         child: ClipRRect(
           borderRadius: AppRadius.md,
           child: Image.network(
@@ -1458,12 +1459,42 @@ class _Attachment extends StatelessWidget {
       );
     }
     if (attachment.isVoice) {
-      return GestureDetector(
-        onTap: _open,
-        child: _VoiceNote(attachment: attachment, mine: mine),
+      return _VoiceNote(
+        url: _absoluteUrl.toString(),
+        attachment: attachment,
+        mine: mine,
       );
     }
     return GestureDetector(onTap: _open, child: _fileCard(context));
+  }
+
+  /// Full screen, pinch to zoom, like WhatsApp; files still open outside.
+  void _viewImage(BuildContext context) {
+    Navigator.of(context, rootNavigator: true).push(
+      MaterialPageRoute<void>(
+        fullscreenDialog: true,
+        builder: (_) => Scaffold(
+          backgroundColor: Colors.black,
+          appBar: AppBar(
+            backgroundColor: Colors.black,
+            foregroundColor: Colors.white,
+            actions: [
+              IconButton(
+                tooltip: 'Open in another app',
+                icon: const Icon(Icons.open_in_new_rounded),
+                onPressed: _open,
+              ),
+            ],
+          ),
+          body: Center(
+            child: InteractiveViewer(
+              maxScale: 5,
+              child: Image.network(_absoluteUrl.toString()),
+            ),
+          ),
+        ),
+      ),
+    );
   }
 
   Widget _fileCard(BuildContext context) {
@@ -1524,45 +1555,158 @@ class _Attachment extends StatelessWidget {
   }
 }
 
-class _VoiceNote extends StatelessWidget {
-  const _VoiceNote({required this.attachment, required this.mine});
+/// In-chat voice note player: play/pause, seekable progress and time,
+/// like WhatsApp. Only one note plays at a time.
+class _VoiceNote extends StatefulWidget {
+  const _VoiceNote({
+    required this.url,
+    required this.attachment,
+    required this.mine,
+  });
+  final String url;
   final MessageAttachment attachment;
   final bool mine;
 
   @override
+  State<_VoiceNote> createState() => _VoiceNoteState();
+}
+
+class _VoiceNoteState extends State<_VoiceNote> {
+  static _VoiceNoteState? _playing;
+
+  final _player = AudioPlayer();
+  final _subs = <StreamSubscription<dynamic>>[];
+  PlayerState _state = PlayerState.stopped;
+  Duration _position = Duration.zero;
+  Duration? _duration;
+  bool _loading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    final known = widget.attachment.durationSeconds;
+    if (known != null && known > 0) _duration = Duration(seconds: known);
+    _subs
+      ..add(
+        _player.onPlayerStateChanged.listen((s) {
+          if (mounted) setState(() => _state = s);
+        }),
+      )
+      ..add(
+        _player.onPositionChanged.listen((p) {
+          if (mounted) setState(() => _position = p);
+        }),
+      )
+      ..add(
+        _player.onDurationChanged.listen((d) {
+          if (mounted && d > Duration.zero) setState(() => _duration = d);
+        }),
+      )
+      ..add(
+        _player.onPlayerComplete.listen((_) {
+          if (mounted) setState(() => _position = Duration.zero);
+        }),
+      );
+  }
+
+  @override
+  void dispose() {
+    if (identical(_playing, this)) _playing = null;
+    for (final s in _subs) {
+      s.cancel();
+    }
+    _player.dispose();
+    super.dispose();
+  }
+
+  Future<void> _toggle() async {
+    if (_state == PlayerState.playing) {
+      await _player.pause();
+      return;
+    }
+    if (!identical(_playing, this)) await _playing?._player.pause();
+    _playing = this;
+    if (_state == PlayerState.paused) {
+      await _player.resume();
+      return;
+    }
+    setState(() => _loading = true);
+    try {
+      await _player.play(UrlSource(widget.url));
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Could not play voice note')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final mine = widget.mine;
     final onColor = mine ? Colors.white : AppColor.brand;
-    return Container(
+    final total = _duration ?? Duration.zero;
+    final progress = total.inMilliseconds == 0
+        ? 0.0
+        : (_position.inMilliseconds / total.inMilliseconds).clamp(0.0, 1.0);
+    final playing = _state == PlayerState.playing;
+    final shown = playing || _position > Duration.zero ? _position : total;
+
+    return SizedBox(
       width: 240,
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
       child: Row(
         children: [
-          Icon(Icons.play_circle_fill_rounded, size: 30, color: onColor),
-          Gap.sm,
-          Expanded(
-            child: SizedBox(
-              height: 22,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: List.generate(
-                  22,
-                  (i) => Container(
-                    width: 2.5,
-                    height: (i % 5 + 1) * 3.5 + 4,
-                    decoration: BoxDecoration(
-                      color: (mine ? Colors.white : AppColor.brand).withValues(
-                        alpha: i.isEven ? 0.9 : 0.45,
-                      ),
-                      borderRadius: BorderRadius.circular(2),
+          SizedBox(
+            width: 36,
+            height: 36,
+            child: _loading
+                ? Padding(
+                    padding: const EdgeInsets.all(8),
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: onColor,
+                    ),
+                  )
+                : IconButton(
+                    padding: EdgeInsets.zero,
+                    iconSize: 32,
+                    tooltip: playing ? 'Pause' : 'Play',
+                    onPressed: _toggle,
+                    icon: Icon(
+                      playing
+                          ? Icons.pause_circle_filled_rounded
+                          : Icons.play_circle_fill_rounded,
+                      color: onColor,
                     ),
                   ),
-                ),
+          ),
+          Expanded(
+            child: SliderTheme(
+              data: SliderTheme.of(context).copyWith(
+                trackHeight: 3,
+                thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 6),
+                overlayShape: const RoundSliderOverlayShape(overlayRadius: 12),
+                activeTrackColor: onColor,
+                inactiveTrackColor: onColor.withValues(alpha: 0.3),
+                thumbColor: onColor,
+              ),
+              child: Slider(
+                value: progress,
+                onChanged: total == Duration.zero
+                    ? null
+                    : (v) => _player.seek(
+                        Duration(
+                          milliseconds: (v * total.inMilliseconds).round(),
+                        ),
+                      ),
               ),
             ),
           ),
-          Gap.sm,
           Text(
-            Fmt.duration(attachment.durationSeconds ?? 0),
+            Fmt.duration(shown.inSeconds),
             style: TextStyle(
               fontSize: 11,
               color: mine ? Colors.white70 : AppColor.textSecondary,
