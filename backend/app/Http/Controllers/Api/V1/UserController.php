@@ -54,7 +54,7 @@ class UserController extends Controller
         }
 
         if ($request->filled('role')) {
-            $query->whereRelation('role', 'name', $request->string('role'));
+            $query->whereRelation('role', 'level', $request->string('role'));
         }
 
         if ($request->filled('status')) {
@@ -77,7 +77,7 @@ class UserController extends Controller
     public function store(StoreUserRequest $request): JsonResponse
     {
         $data = $request->validated();
-        $data['role_id'] = Role::where('name', $data['role'])->value('id');
+        $data['role_id'] = ($data['role_id'] ?? null) ?: Role::where('name', $data['role'])->value('id');
         unset($data['role']);
 
         // The admin knows this password either way, so the new user must
@@ -109,7 +109,9 @@ class UserController extends Controller
     {
         $data = $request->validated();
 
-        if (isset($data['role'])) {
+        if (! empty($data['role_id'])) {
+            unset($data['role']);
+        } elseif (isset($data['role'])) {
             $data['role_id'] = Role::where('name', $data['role'])->value('id');
             unset($data['role']);
         }

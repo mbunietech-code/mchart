@@ -26,7 +26,9 @@ class UpdateUserRequest extends FormRequest
             'email' => ['sometimes', 'email', 'max:150', Rule::unique('users', 'email')->ignore($userId)],
             'phone' => ['nullable', 'string', 'max:30'],
             'password' => ['nullable', 'confirmed', Password::defaults()],
-            'role' => ['sometimes', Rule::enum(UserRole::class)],
+            'role' => ['sometimes', 'nullable', Rule::enum(UserRole::class)],
+            // A specific job title; wins over 'role' (a bare level).
+            'role_id' => ['nullable', 'integer', 'exists:roles,id'],
             'department_id' => ['nullable', 'exists:departments,id'],
             'status' => ['sometimes', Rule::in(['active', 'inactive'])],
         ];

@@ -13,7 +13,7 @@ class RoleSeeder extends Seeder
         foreach (UserRole::cases() as $role) {
             Role::updateOrCreate(
                 ['name' => $role->value],
-                ['label' => $role->label()],
+                ['label' => $role->label(), 'level' => $role->value],
             );
         }
     }

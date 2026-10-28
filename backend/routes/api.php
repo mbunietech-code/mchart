@@ -63,6 +63,9 @@ Route::middleware(['auth:sanctum', 'active', 'password.changed'])->group(functio
         Route::post('departments', [DepartmentController::class, 'store']);
         Route::patch('departments/{department}', [DepartmentController::class, 'update']);
         Route::delete('departments/{department}', [DepartmentController::class, 'destroy']);
+        Route::post('roles', [RoleController::class, 'store']);
+        Route::patch('roles/{role}', [RoleController::class, 'update']);
+        Route::delete('roles/{role}', [RoleController::class, 'destroy']);
     });
 
     // Chat

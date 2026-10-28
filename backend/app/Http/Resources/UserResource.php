@@ -17,7 +17,9 @@ class UserResource extends JsonResource
             'phone' => $this->phone,
             'avatar_url' => $this->avatar_path ? \App\Services\AttachmentStorage::url($this->avatar_path) : null,
             'role' => $this->roleEnum()?->value,
-            'role_label' => $this->roleEnum()?->label(),
+            // Job title (custom roles), falling back to the level's name.
+            'role_label' => $this->role?->label ?: $this->roleEnum()?->label(),
+            'role_id' => $this->role_id,
             'status' => $this->status,
             'department_id' => $this->department_id,
             'department' => new DepartmentResource($this->whenLoaded('department')),

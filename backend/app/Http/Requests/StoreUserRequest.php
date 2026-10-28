@@ -25,7 +25,9 @@ class StoreUserRequest extends FormRequest
             'phone' => ['nullable', 'string', 'max:30'],
             // Empty = generate a temporary password and email it.
             'password' => ['nullable', 'confirmed', Password::defaults()],
-            'role' => ['required', Rule::enum(UserRole::class)],
+            'role' => ['required_without:role_id', 'nullable', Rule::enum(UserRole::class)],
+            // A specific job title; wins over 'role' (a bare level).
+            'role_id' => ['nullable', 'integer', 'exists:roles,id'],
             'department_id' => ['nullable', 'exists:departments,id'],
             'status' => ['nullable', Rule::in(['active', 'inactive'])],
         ];

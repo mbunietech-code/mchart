@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Notifications\RoutesNotifications;
 use Laravel\Sanctum\HasApiTokens;
 
 #[Fillable(['name', 'email', 'phone', 'avatar_path', 'password', 'must_change_password', 'role_id', 'department_id', 'status'])]
@@ -18,7 +19,9 @@ use Laravel\Sanctum\HasApiTokens;
 class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
-    use HasApiTokens, HasFactory;
+    // RoutesNotifications only (not Notifiable): gives notify() for Laravel's
+    // password-reset mail without clashing with our own notifications().
+    use HasApiTokens, HasFactory, RoutesNotifications;
 
     /**
      * @return array<string, string>
@@ -82,7 +85,8 @@ class User extends Authenticatable
 
     public function roleEnum(): ?UserRole
     {
-        return $this->role ? UserRole::tryFrom($this->role->name) : null;
+        // Permissions follow the role's level; custom titles sit on one.
+        return $this->role ? UserRole::tryFrom($this->role->level ?: $this->role->name) : null;
     }
 
     public function hasRole(UserRole $role): bool

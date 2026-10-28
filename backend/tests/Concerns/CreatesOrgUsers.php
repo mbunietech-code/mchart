@@ -12,7 +12,7 @@ trait CreatesOrgUsers
     protected function seedRoles(): void
     {
         foreach (UserRole::cases() as $role) {
-            Role::firstOrCreate(['name' => $role->value], ['label' => $role->label()]);
+            Role::firstOrCreate(['name' => $role->value], ['label' => $role->label(), 'level' => $role->value]);
         }
     }
 
