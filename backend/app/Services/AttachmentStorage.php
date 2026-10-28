@@ -38,6 +38,21 @@ class AttachmentStorage
         return $target;
     }
 
+    /**
+     * Link to a stored file. Private disks (production's `local`) get a
+     * signed URL Laravel serves itself; the expiry is pinned to the end of
+     * tomorrow so the link stays identical all day and image caches hold
+     * across the app's polling.
+     */
+    public static function url(string $path): string
+    {
+        $disk = Storage::disk();
+
+        return $disk->providesTemporaryUrls()
+            ? $disk->temporaryUrl($path, now()->addDay()->endOfDay())
+            : $disk->url($path);
+    }
+
     public function delete(?string $path): void
     {
         if ($path && Storage::exists($path)) {

@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
-use Illuminate\Support\Facades\Storage;
+use App\Services\AttachmentStorage;
 
 #[Fillable(['author_id', 'department_id', 'category', 'title', 'body', 'image_path', 'pinned', 'expires_at', 'archived_at'])]
 class Announcement extends Model
@@ -44,7 +44,7 @@ class Announcement extends Model
 
     public function getImageUrlAttribute(): ?string
     {
-        return $this->image_path ? Storage::url($this->image_path) : null;
+        return $this->image_path ? AttachmentStorage::url($this->image_path) : null;
     }
 
     public function isArchived(): bool

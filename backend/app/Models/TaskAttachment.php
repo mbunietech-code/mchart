@@ -5,7 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Support\Facades\Storage;
+use App\Services\AttachmentStorage;
 
 #[Fillable(['task_id', 'file_path', 'file_name', 'file_type', 'file_size', 'duration_seconds', 'uploaded_by'])]
 class TaskAttachment extends Model
@@ -24,6 +24,6 @@ class TaskAttachment extends Model
 
     public function getUrlAttribute(): string
     {
-        return Storage::url($this->file_path);
+        return AttachmentStorage::url($this->file_path);
     }
 }
