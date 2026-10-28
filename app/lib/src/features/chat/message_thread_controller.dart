@@ -241,6 +241,19 @@ class MessageThreadController extends StateNotifier<MessageThreadState> {
     }
   }
 
+  /// "Delete for me": gone from this user's view only.
+  Future<void> hideMessage(int messageId) async {
+    final before = state.messages;
+    state = state.copyWith(
+      messages: before.where((m) => m.id != messageId).toList(),
+    );
+    try {
+      await _repo.hideMessage(conversationId, messageId);
+    } catch (e) {
+      state = state.copyWith(messages: before, error: e.toString());
+    }
+  }
+
   Future<void> deleteMessage(int messageId) async {
     try {
       await _repo.deleteMessage(conversationId, messageId);

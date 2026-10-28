@@ -82,6 +82,9 @@ class ChatRepository {
     return Message.fromJson(json['data'] as Map<String, dynamic>);
   }
 
+  Future<void> hideMessage(int conversationId, int messageId) =>
+      _api.post('/conversations/$conversationId/messages/$messageId/hide');
+
   Future<void> deleteMessage(int conversationId, int messageId) =>
       _api.delete('/conversations/$conversationId/messages/$messageId');
 

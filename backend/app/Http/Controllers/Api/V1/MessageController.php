@@ -34,6 +34,7 @@ class MessageController extends Controller
         $this->authorize('view', $conversation);
 
         $messages = $conversation->messages()
+            ->whereNotIn('id', DB::table('hidden_messages')->where('user_id', $request->user()->id)->select('message_id'))
             ->with(['sender', 'attachments', 'replyTo.sender', 'reactions'])
             ->latest('id')
             ->when($request->filled('before'), fn ($q) => $q->where('id', '<', $request->integer('before')))
@@ -165,6 +166,21 @@ class MessageController extends Controller
         $message->update(['body' => $data['body'], 'edited_at' => now()]);
 
         return new MessageResource($message->load('sender', 'attachments', 'replyTo.sender', 'reactions'));
+    }
+
+    /** "Delete for me": hide from this user only; works on deleted ones too. */
+    public function hide(Request $request, Conversation $conversation, Message $message): JsonResponse
+    {
+        abort_unless($message->conversation_id === $conversation->id, 404);
+        $this->authorize('view', $conversation);
+
+        DB::table('hidden_messages')->insertOrIgnore([
+            'message_id' => $message->id,
+            'user_id' => $request->user()->id,
+            'created_at' => now(),
+        ]);
+
+        return response()->json(['message' => 'Message removed for you.']);
     }
 
     public function destroy(Request $request, Conversation $conversation, Message $message): JsonResponse

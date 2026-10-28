@@ -71,6 +71,7 @@ Route::middleware(['auth:sanctum', 'active', 'password.changed'])->group(functio
     Route::post('conversations/{conversation}/messages', [MessageController::class, 'store']);
     Route::patch('conversations/{conversation}/messages/{message}', [MessageController::class, 'update']);
     Route::delete('conversations/{conversation}/messages/{message}', [MessageController::class, 'destroy']);
+    Route::post('conversations/{conversation}/messages/{message}/hide', [MessageController::class, 'hide']);
     Route::post('conversations/{conversation}/read', [MessageController::class, 'markRead']);
     Route::post('conversations/{conversation}/typing', [MessageController::class, 'typing']);
     Route::post('conversations/{conversation}/messages/{message}/reactions', [MessageReactionController::class, 'store']);

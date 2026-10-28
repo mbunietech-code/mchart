@@ -764,6 +764,9 @@ class _ThreadPaneState extends ConsumerState<_ThreadPane> {
                                 msg.senderId != widget.currentUserId &&
                                 (prev == null || prev.senderId != msg.senderId),
                             onReply: () => _reply(msg),
+                            onDeleteForMe: msg.id > 0
+                                ? () => _thread.hideMessage(msg.id)
+                                : null,
                             onCopy: msg.isSticker || (msg.body ?? '').isEmpty
                                 ? null
                                 : () => _copy(msg),
@@ -964,7 +967,9 @@ class _MessageBubble extends StatelessWidget {
     this.onCopy,
     this.onForward,
     this.onEdit,
+    this.onDeleteForMe,
   });
+  final VoidCallback? onDeleteForMe;
   final Message message;
   final bool mine;
   final bool showAuthor;
@@ -976,7 +981,23 @@ class _MessageBubble extends StatelessWidget {
   final void Function(String emoji, bool mine)? onReact;
 
   void _openMenu(BuildContext context) {
-    if (message.deleted) return;
+    if (message.deleted) {
+      if (onDeleteForMe == null) return;
+      showModalBottomSheet<void>(
+        context: context,
+        builder: (sheet) => SafeArea(
+          child: ListTile(
+            leading: const Icon(Icons.delete_sweep_outlined),
+            title: const Text('Delete for me'),
+            onTap: () {
+              Navigator.of(sheet).pop();
+              onDeleteForMe!.call();
+            },
+          ),
+        ),
+      );
+      return;
+    }
     showModalBottomSheet<void>(
       context: context,
       backgroundColor: Colors.transparent,
@@ -1053,6 +1074,15 @@ class _MessageBubble extends StatelessWidget {
                       onEdit!.call();
                     },
                   ),
+                if (onDeleteForMe != null)
+                  ListTile(
+                    leading: const Icon(Icons.delete_sweep_outlined),
+                    title: const Text('Delete for me'),
+                    onTap: () {
+                      Navigator.of(context).pop();
+                      onDeleteForMe!.call();
+                    },
+                  ),
                 if (mine && onDelete != null)
                   ListTile(
                     leading: const Icon(
@@ -1060,7 +1090,7 @@ class _MessageBubble extends StatelessWidget {
                       color: AppColor.danger,
                     ),
                     title: const Text(
-                      'Delete',
+                      'Delete for everyone',
                       style: TextStyle(color: AppColor.danger),
                     ),
                     onTap: () {
@@ -1084,30 +1114,33 @@ class _MessageBubble extends StatelessWidget {
     if (message.deleted) {
       return Padding(
         padding: const EdgeInsets.only(bottom: 8),
-        child: Align(
-          alignment: mine ? Alignment.centerRight : Alignment.centerLeft,
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            decoration: BoxDecoration(
-              color: AppColor.surfaceMuted,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(
-                  Icons.block_rounded,
-                  size: 14,
-                  color: AppColor.textMuted,
-                ),
-                Gap.xs,
-                Text(
-                  'This message was deleted',
-                  style: Theme.of(
-                    context,
-                  ).textTheme.bodySmall?.copyWith(fontStyle: FontStyle.italic),
-                ),
-              ],
+        child: GestureDetector(
+          onLongPress: () => _openMenu(context),
+          child: Align(
+            alignment: mine ? Alignment.centerRight : Alignment.centerLeft,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: AppColor.surfaceMuted,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(
+                    Icons.block_rounded,
+                    size: 14,
+                    color: AppColor.textMuted,
+                  ),
+                  Gap.xs,
+                  Text(
+                    'This message was deleted',
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      fontStyle: FontStyle.italic,
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ),
