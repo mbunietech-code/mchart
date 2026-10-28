@@ -40,7 +40,9 @@ return [
                 // Reverb process so PHP never leaves the box to broadcast;
                 // falls back to the public endpoint when not set.
                 'host' => env('REVERB_INTERNAL_HOST', env('REVERB_SERVER_HOST', env('REVERB_HOST'))),
-                'port' => env('REVERB_INTERNAL_PORT', env('REVERB_SERVER_PORT', env('REVERB_PORT', 443))),
+                // REVERB_SERVER_PORT is the local Reverb's port, so it only
+                // applies together with REVERB_SERVER_HOST.
+                'port' => env('REVERB_INTERNAL_PORT', env('REVERB_SERVER_HOST') ? env('REVERB_SERVER_PORT', 8080) : env('REVERB_PORT', 443)),
                 'scheme' => env('REVERB_INTERNAL_SCHEME', env('REVERB_SERVER_HOST') ? 'http' : env('REVERB_SCHEME', 'https')),
                 'useTLS' => env('REVERB_INTERNAL_SCHEME', env('REVERB_SERVER_HOST') ? 'http' : env('REVERB_SCHEME', 'https')) === 'https',
             ],
