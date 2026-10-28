@@ -16,6 +16,7 @@ import '../../widgets/page_header.dart';
 import '../../widgets/stat_card.dart';
 import '../auth/auth_controller.dart';
 import '../directory/directory_repository.dart';
+import 'org_dialogs.dart';
 import 'user_form.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget {
@@ -59,6 +60,21 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                           size: 18,
                         ),
                         label: const Text('Invite User'),
+                      ),
+                    if (isAdmin && _tab == 1)
+                      FilledButton.icon(
+                        onPressed: () => showDepartmentForm(context, ref),
+                        icon: const Icon(Icons.add_business_rounded, size: 18),
+                        label: const Text('Add Department'),
+                      ),
+                    if (isAdmin && _tab == 2)
+                      FilledButton.icon(
+                        onPressed: () => showRoleForm(context, ref),
+                        icon: const Icon(
+                          Icons.add_moderator_outlined,
+                          size: 18,
+                        ),
+                        label: const Text('Add Role'),
                       ),
                   ],
                 ),
@@ -440,7 +456,7 @@ class _UserRow extends ConsumerWidget {
               ).textTheme.bodySmall?.copyWith(color: AppColor.brand),
             ),
           ),
-          Expanded(flex: 2, child: _RoleBadge(role: user.role)),
+          Expanded(flex: 2, child: _RoleBadge(role: user.role, title: user.roleLabel)),
           Expanded(
             flex: 2,
             child: StatusPill(
@@ -626,7 +642,7 @@ class _UserCard extends ConsumerWidget {
             spacing: 8,
             runSpacing: 8,
             children: [
-              _RoleBadge(role: user.role),
+              _RoleBadge(role: user.role, title: user.roleLabel),
               StatusPill(
                 user.isActive ? 'Active' : 'Inactive',
                 color: user.isActive ? AppColor.success : AppColor.textMuted,
@@ -655,8 +671,11 @@ class _UserCard extends ConsumerWidget {
 }
 
 class _RoleBadge extends StatelessWidget {
-  const _RoleBadge({required this.role});
+  const _RoleBadge({required this.role, this.title});
   final UserRole role;
+
+  /// Job title; coloured by its permission level.
+  final String? title;
 
   @override
   Widget build(BuildContext context) {
@@ -679,7 +698,12 @@ class _RoleBadge extends StatelessWidget {
     };
     return Align(
       alignment: Alignment.centerLeft,
-      child: StatusPill(role.label, color: color, background: bg, icon: icon),
+      child: StatusPill(
+        title ?? role.label,
+        color: color,
+        background: bg,
+        icon: icon,
+      ),
     );
   }
 }
@@ -727,9 +751,48 @@ class _DepartmentsTab extends ConsumerWidget {
                       ),
                     ),
                     Gap.md,
-                    Text(
-                      list[i].name,
-                      style: Theme.of(context).textTheme.titleMedium,
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            list[i].name,
+                            style: Theme.of(context).textTheme.titleMedium,
+                          ),
+                        ),
+                        PopupMenuButton<String>(
+                          icon: const Icon(Icons.more_horiz_rounded, size: 18),
+                          onSelected: (v) {
+                            if (v == 'edit') {
+                              showDepartmentForm(
+                                context,
+                                ref,
+                                department: list[i],
+                              );
+                            } else {
+                              confirmDelete(
+                                context,
+                                title: 'Delete ${list[i].name}?',
+                                action: () async {
+                                  await ref
+                                      .read(directoryRepositoryProvider)
+                                      .deleteDepartment(list[i].id);
+                                  ref.invalidate(departmentsProvider);
+                                },
+                              );
+                            }
+                          },
+                          itemBuilder: (_) => const [
+                            PopupMenuItem(value: 'edit', child: Text('Edit')),
+                            PopupMenuItem(
+                              value: 'delete',
+                              child: Text(
+                                'Delete',
+                                style: TextStyle(color: AppColor.danger),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
                     ),
                     if (list[i].description != null) ...[
                       Gap.xs,
@@ -760,7 +823,7 @@ class _DepartmentsTab extends ConsumerWidget {
 // Roles tab
 // ---------------------------------------------------------------------------
 
-class _RolesTab extends StatelessWidget {
+class _RolesTab extends ConsumerWidget {
   const _RolesTab();
 
   static const _matrix = {
@@ -773,7 +836,74 @@ class _RolesTab extends StatelessWidget {
   };
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final roles = ref.watch(rolesProvider);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        AppCard(
+          padding: EdgeInsets.zero,
+          child: roles.when(
+            loading: () => const LoadingBlock(height: 120),
+            error: (e, _) => ErrorBlock(message: '$e'),
+            data: (list) => Column(
+              children: [
+                for (final r in list)
+                  ListTile(
+                    leading: const Icon(Icons.badge_outlined),
+                    title: Text(r.label),
+                    subtitle: Text(
+                      '${r.level.label} level · ${r.usersCount} '
+                      '${r.usersCount == 1 ? 'person' : 'people'}'
+                      '${r.builtIn ? ' · built-in' : ''}',
+                    ),
+                    trailing: PopupMenuButton<String>(
+                      icon: const Icon(Icons.more_horiz_rounded, size: 18),
+                      onSelected: (v) {
+                        if (v == 'edit') {
+                          showRoleForm(context, ref, role: r);
+                        } else {
+                          confirmDelete(
+                            context,
+                            title: 'Delete the ${r.label} role?',
+                            action: () async {
+                              await ref
+                                  .read(directoryRepositoryProvider)
+                                  .deleteRole(r.id);
+                              ref.invalidate(rolesProvider);
+                            },
+                          );
+                        }
+                      },
+                      itemBuilder: (_) => [
+                        const PopupMenuItem(value: 'edit', child: Text('Edit')),
+                        if (!r.builtIn)
+                          const PopupMenuItem(
+                            value: 'delete',
+                            child: Text(
+                              'Delete',
+                              style: TextStyle(color: AppColor.danger),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ),
+        Gap.lg,
+        Text(
+          'What each permission level can do',
+          style: Theme.of(context).textTheme.titleSmall,
+        ),
+        Gap.sm,
+        _permissionMatrix(context),
+      ],
+    );
+  }
+
+  Widget _permissionMatrix(BuildContext context) {
     return AppCard(
       padding: EdgeInsets.zero,
       child: SingleChildScrollView(

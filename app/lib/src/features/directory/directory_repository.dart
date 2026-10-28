@@ -70,6 +70,26 @@ class DirectoryRepository {
   Future<void> deleteUserPermanently(int id) =>
       _api.delete('/users/$id/permanent');
 
+  Future<void> updateDepartment(int id, Map<String, dynamic> body) =>
+      _api.patch('/departments/$id', data: body);
+
+  Future<void> deleteDepartment(int id) => _api.delete('/departments/$id');
+
+  Future<List<AppRole>> roles() async {
+    final json = await _api.get<Map<String, dynamic>>('/roles');
+    return (json['data'] as List? ?? const [])
+        .map((e) => AppRole.fromJson(e as Map<String, dynamic>))
+        .toList();
+  }
+
+  Future<void> createRole(Map<String, dynamic> body) =>
+      _api.post('/roles', data: body);
+
+  Future<void> updateRole(int id, Map<String, dynamic> body) =>
+      _api.patch('/roles/$id', data: body);
+
+  Future<void> deleteRole(int id) => _api.delete('/roles/$id');
+
   Future<Department> createDepartment(Map<String, dynamic> body) async {
     final json = await _api.post<Map<String, dynamic>>(
       '/departments',
@@ -84,6 +104,10 @@ typedef CreatedUser = ({
   String? temporaryPassword,
   bool invitationSent,
 });
+
+final rolesProvider = FutureProvider<List<AppRole>>(
+  (ref) => ref.watch(directoryRepositoryProvider).roles(),
+);
 
 final directoryRepositoryProvider = Provider(
   (ref) => DirectoryRepository(ref.watch(apiClientProvider)),

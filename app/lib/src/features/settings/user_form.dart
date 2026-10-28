@@ -35,6 +35,7 @@ class _UserFormState extends ConsumerState<_UserForm> {
   late final _phone = TextEditingController(text: widget.user?.phone);
   final _password = TextEditingController();
   late UserRole _role = widget.user?.role ?? UserRole.staff;
+  late int? _roleId = widget.user?.roleId;
   late int? _departmentId = widget.user?.departmentId;
   bool _busy = false;
   String? _error;
@@ -62,6 +63,7 @@ class _UserFormState extends ConsumerState<_UserForm> {
       'email': _email.text.trim(),
       'phone': _phone.text.trim(),
       'role': _role.name,
+      'role_id': ?_roleId,
       'department_id': _departmentId,
     };
     try {
@@ -139,16 +141,49 @@ class _UserFormState extends ConsumerState<_UserForm> {
             Row(
               children: [
                 Expanded(
-                  child: DropdownButtonFormField<UserRole>(
-                    initialValue: _role,
-                    decoration: const InputDecoration(labelText: 'Role'),
-                    items: [
-                      for (final r in UserRole.values)
-                        DropdownMenuItem(value: r, child: Text(r.label)),
-                    ],
-                    onChanged: (v) =>
-                        setState(() => _role = v ?? UserRole.staff),
-                  ),
+                  child: ref
+                      .watch(rolesProvider)
+                      .maybeWhen(
+                        data: (roles) => DropdownButtonFormField<int>(
+                          initialValue: roles.any((r) => r.id == _roleId)
+                              ? _roleId
+                              : null,
+                          isExpanded: true,
+                          decoration: const InputDecoration(labelText: 'Role'),
+                          items: [
+                            for (final r in roles)
+                              DropdownMenuItem(
+                                value: r.id,
+                                child: Text(
+                                  r.builtIn
+                                      ? r.label
+                                      : '${r.label} · ${r.level.label}',
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                          ],
+                          validator: (v) => v == null ? 'Pick a role' : null,
+                          onChanged: (v) => setState(() {
+                            _roleId = v;
+                            _role =
+                                roles
+                                    .where((r) => r.id == v)
+                                    .firstOrNull
+                                    ?.level ??
+                                UserRole.staff;
+                          }),
+                        ),
+                        orElse: () => DropdownButtonFormField<UserRole>(
+                          initialValue: _role,
+                          decoration: const InputDecoration(labelText: 'Role'),
+                          items: [
+                            for (final r in UserRole.values)
+                              DropdownMenuItem(value: r, child: Text(r.label)),
+                          ],
+                          onChanged: (v) =>
+                              setState(() => _role = v ?? UserRole.staff),
+                        ),
+                      ),
                 ),
                 Gap.md,
                 Expanded(

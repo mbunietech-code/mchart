@@ -34,6 +34,8 @@ class User {
     this.lastSeenAt,
     this.mustChangePassword = false,
     this.avatarUrl,
+    this.roleId,
+    this.roleLabel,
   });
 
   final int id;
@@ -51,6 +53,10 @@ class User {
 
   /// Profile photo, already a full (signed) URL.
   final String? avatarUrl;
+
+  /// The job title (custom role) and its id; [role] is its permission level.
+  final int? roleId;
+  final String? roleLabel;
 
   bool get isActive => status == 'active';
   bool get isOnline =>
@@ -87,8 +93,35 @@ class User {
     lastSeenAt: _date(j['last_seen_at']),
     mustChangePassword: j['must_change_password'] as bool? ?? false,
     avatarUrl: j['avatar_url'] as String?,
+    roleId: (j['role_id'] as num?)?.toInt(),
+    roleLabel: j['role_label'] as String?,
   );
 }
 
 DateTime? _date(Object? v) =>
     v == null ? null : DateTime.tryParse(v.toString())?.toLocal();
+
+/// A job title on one of the three permission levels.
+class AppRole {
+  const AppRole({
+    required this.id,
+    required this.label,
+    required this.level,
+    this.builtIn = false,
+    this.usersCount = 0,
+  });
+
+  final int id;
+  final String label;
+  final UserRole level;
+  final bool builtIn;
+  final int usersCount;
+
+  factory AppRole.fromJson(Map<String, dynamic> j) => AppRole(
+    id: (j['id'] as num).toInt(),
+    label: j['label'] as String? ?? j['name'] as String? ?? '',
+    level: UserRole.from(j['level'] as String? ?? j['name'] as String?),
+    builtIn: j['built_in'] as bool? ?? false,
+    usersCount: (j['users_count'] as num?)?.toInt() ?? 0,
+  );
+}
