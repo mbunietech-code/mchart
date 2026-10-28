@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\V1\AnnouncementController;
 use App\Http\Controllers\Api\V1\Auth\AuthController;
 use App\Http\Controllers\Api\V1\Auth\PasswordResetController;
 use App\Http\Controllers\Api\V1\ConversationController;
@@ -90,6 +91,16 @@ Route::middleware(['auth:sanctum', 'active'])->group(function () {
     Route::delete('tasks/{task}/attachments/{attachment}', [TaskAttachmentController::class, 'destroy']);
 
     // Notifications
+    // Status / Announcements
+    Route::get('announcements', [AnnouncementController::class, 'index']);
+    Route::get('announcements/unread-count', [AnnouncementController::class, 'unreadCount']);
+    Route::post('announcements', [AnnouncementController::class, 'store']);
+    Route::get('announcements/{announcement}', [AnnouncementController::class, 'show']);
+    Route::patch('announcements/{announcement}', [AnnouncementController::class, 'update']);
+    Route::post('announcements/{announcement}', [AnnouncementController::class, 'update']); // multipart (image)
+    Route::delete('announcements/{announcement}', [AnnouncementController::class, 'destroy']);
+    Route::post('announcements/{announcement}/read', [AnnouncementController::class, 'markRead']);
+
     Route::get('notifications', [NotificationController::class, 'index']);
     Route::get('notifications/unread-count', [NotificationController::class, 'unreadCount']);
     Route::post('notifications/read-all', [NotificationController::class, 'markAllRead']);

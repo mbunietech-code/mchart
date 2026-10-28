@@ -8,6 +8,7 @@ import '../../core/env.dart';
 import '../../core/providers.dart';
 import '../../models/app_notification.dart';
 import '../auth/auth_controller.dart';
+import '../status/announcement_repository.dart';
 
 class NotificationsState {
   const NotificationsState({this.items = const [], this.loading = true});
@@ -47,7 +48,15 @@ class NotificationsController extends StateNotifier<NotificationsState> {
       final items = (json['data'] as List? ?? const [])
           .map((e) => AppNotification.fromJson(e as Map<String, dynamic>))
           .toList();
+      final known = state.items.map((n) => n.id).toSet();
+      final newAnnouncement =
+          !state.loading &&
+          items.any((n) => n.type == 'announcement' && !known.contains(n.id));
       state = state.copyWith(items: items, loading: false);
+      if (newAnnouncement) {
+        _ref.invalidate(announcementUnreadProvider);
+        _ref.invalidate(announcementsProvider);
+      }
     } catch (_) {
       state = state.copyWith(loading: false);
     }
@@ -61,6 +70,10 @@ class NotificationsController extends StateNotifier<NotificationsState> {
       final n = AppNotification.fromJson(data);
       if (state.items.any((e) => e.id == n.id)) return;
       state = state.copyWith(items: [n, ...state.items]);
+      if (n.type == 'announcement') {
+        _ref.invalidate(announcementUnreadProvider);
+        _ref.invalidate(announcementsProvider);
+      }
     });
   }
 

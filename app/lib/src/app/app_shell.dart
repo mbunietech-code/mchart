@@ -8,6 +8,7 @@ import '../features/auth/auth_controller.dart';
 import '../features/chat/chat_repository.dart';
 import '../features/notifications/notifications_controller.dart';
 import '../features/notifications/notifications_panel.dart';
+import '../features/status/announcement_repository.dart';
 import '../models/user.dart';
 import '../theme/app_color.dart';
 import '../theme/app_spacing.dart';
@@ -89,10 +90,11 @@ class _AppShellState extends ConsumerState<AppShell> {
 // ---------------------------------------------------------------------------
 
 class _MobileDestination {
-  const _MobileDestination(this.path, this.icon, this.label);
+  const _MobileDestination(this.path, this.icon, this.label, {this.badge = 0});
   final String path;
   final IconData icon;
   final String label;
+  final int badge;
 }
 
 class _MobileShell extends ConsumerWidget {
@@ -114,9 +116,16 @@ class _MobileShell extends ConsumerWidget {
     final unread = ref.watch(
       notificationsControllerProvider.select((s) => s.unread),
     );
+    final statusUnread = ref.watch(announcementUnreadProvider).valueOrNull ?? 0;
 
     final destinations = <_MobileDestination>[
       const _MobileDestination('/chats', Icons.forum_outlined, 'Chats'),
+      _MobileDestination(
+        '/status',
+        Icons.campaign_outlined,
+        'Status',
+        badge: statusUnread,
+      ),
       const _MobileDestination('/tasks', Icons.checklist_rounded, 'Tasks'),
       if (user.role.isManagerOrAdmin)
         const _MobileDestination(
@@ -173,7 +182,14 @@ class _MobileShell extends ConsumerWidget {
         onDestinationSelected: (i) => context.go(destinations[i].path),
         destinations: [
           for (final d in destinations)
-            NavigationDestination(icon: Icon(d.icon), label: d.label),
+            NavigationDestination(
+              icon: Badge(
+                isLabelVisible: d.badge > 0,
+                label: Text('${d.badge}'),
+                child: Icon(d.icon),
+              ),
+              label: d.label,
+            ),
         ],
       ),
     );
@@ -218,6 +234,7 @@ class _Sidebar extends ConsumerWidget {
     final unread = ref.watch(
       notificationsControllerProvider.select((s) => s.unread),
     );
+    final statusUnread = ref.watch(announcementUnreadProvider).valueOrNull ?? 0;
     final channelUnread = ref
         .watch(conversationsProvider)
         .maybeWhen(
@@ -273,6 +290,13 @@ class _Sidebar extends ConsumerWidget {
             active: location.startsWith('/chats'),
             trailing: channelUnread > 0 ? CountBadge(channelUnread) : null,
             onTap: () => context.go('/chats'),
+          ),
+          _NavItem(
+            icon: Icons.campaign_outlined,
+            label: 'Status',
+            active: location.startsWith('/status'),
+            trailing: statusUnread > 0 ? CountBadge(statusUnread) : null,
+            onTap: () => context.go('/status'),
           ),
           _NavItem(
             icon: Icons.checklist_rounded,

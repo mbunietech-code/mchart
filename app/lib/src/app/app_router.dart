@@ -9,6 +9,7 @@ import '../features/dashboard/dashboard_screen.dart';
 import '../features/settings/settings_screen.dart';
 import '../features/tasks/task_detail_screen.dart';
 import '../features/tasks/tasks_screen.dart';
+import '../features/status/status_screen.dart';
 import '../models/enums.dart';
 import 'app_shell.dart';
 
@@ -86,6 +87,11 @@ final routerProvider = Provider<GoRouter>((ref) {
                 conversationId: int.tryParse(s.uri.queryParameters['c'] ?? ''),
               ),
             ),
+          ),
+          GoRoute(
+            path: '/status',
+            pageBuilder: (c, s) =>
+                const NoTransitionPage(child: StatusScreen()),
           ),
           GoRoute(
             path: '/settings',

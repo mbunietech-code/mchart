@@ -190,6 +190,9 @@ class _NotificationRow extends StatelessWidget {
         } else if (notification.conversationId != null) {
           Navigator.pop(context);
           context.go('/chats?c=${notification.conversationId}');
+        } else if (notification.type == 'announcement') {
+          Navigator.pop(context);
+          context.go('/status');
         }
       },
       child: Container(
@@ -267,6 +270,7 @@ class _NotificationRow extends StatelessWidget {
     'task_started' => (Icons.play_circle_outline_rounded, AppColor.brand),
     'task_comment' => (Icons.mode_comment_outlined, AppColor.slate),
     'new_message' => (Icons.chat_bubble_outline_rounded, AppColor.brand),
+    'announcement' => (Icons.campaign_outlined, AppColor.urgent),
     _ => (Icons.notifications_none_rounded, AppColor.slate),
   };
 }
