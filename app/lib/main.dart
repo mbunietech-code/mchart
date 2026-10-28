@@ -5,10 +5,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'src/app/app.dart';
+import 'src/core/push_service.dart';
 
 void main() {
-  runZonedGuarded(() {
+  runZonedGuarded(() async {
     WidgetsFlutterBinding.ensureInitialized();
+    await PushService.initFirebase();
     FlutterError.onError = (details) {
       FlutterError.presentError(details);
       if (kDebugMode) {

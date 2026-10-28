@@ -1,6 +1,9 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../core/push_service.dart';
 import '../features/auth/auth_controller.dart';
 import '../theme/app_theme.dart';
 import 'app_router.dart';
@@ -21,8 +24,18 @@ class _MChartAppState extends ConsumerState<MChartApp> {
     );
   }
 
+  void _syncPush(AuthState? before, AuthState now) {
+    final push = ref.read(pushServiceProvider);
+    if (now is Authenticated && before is! Authenticated) {
+      unawaited(push.start());
+    } else if (now is! Authenticated && before is Authenticated) {
+      unawaited(push.stop());
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    ref.listen(authControllerProvider, _syncPush);
     final router = ref.watch(routerProvider);
     // Until bootstrap has read the stored token, keep the shell out of the
     // tree: its screens fetch on build, and a token-less 401 there would
@@ -33,6 +46,7 @@ class _MChartAppState extends ConsumerState<MChartApp> {
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light(),
       routerConfig: router,
+      scaffoldMessengerKey: rootMessengerKey,
       builder: (context, child) => booting
           ? const Scaffold(body: Center(child: CircularProgressIndicator()))
           : child!,

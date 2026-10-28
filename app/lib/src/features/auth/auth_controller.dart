@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/api_client.dart';
 import '../../core/api_exception.dart';
 import '../../core/providers.dart';
+import '../../core/push_service.dart';
 import '../../core/token_store.dart';
 import '../../models/user.dart';
 
@@ -94,7 +95,13 @@ class AuthController extends StateNotifier<AuthState> {
 
   Future<void> logout() async {
     try {
-      await _api.post('/auth/logout');
+      await _api.post(
+        '/auth/logout',
+        data: {
+          if (PushService.currentToken != null)
+            'push_token': PushService.currentToken,
+        },
+      );
     } catch (_) {}
     await _tokens.clear();
     state = const Unauthenticated();

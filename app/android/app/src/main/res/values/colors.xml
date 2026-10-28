@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- AppColor.brand; tints the push notification icon. -->
+    <color name="mchart_brand">#1E40AF</color>
+</resources>

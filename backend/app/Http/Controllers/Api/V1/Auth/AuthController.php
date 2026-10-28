@@ -43,6 +43,11 @@ class AuthController extends Controller
 
     public function logout(Request $request): JsonResponse
     {
+        // This phone stops receiving the account's pushes.
+        if ($request->filled('push_token')) {
+            $request->user()->devices()->where('push_token', $request->string('push_token'))->delete();
+        }
+
         $request->user()->currentAccessToken()->delete();
 
         return response()->json(['message' => 'Logged out.']);

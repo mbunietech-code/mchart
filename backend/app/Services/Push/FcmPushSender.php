@@ -3,6 +3,7 @@
 namespace App\Services\Push;
 
 use App\Contracts\PushNotificationSender;
+use App\Models\Device;
 use App\Models\Notification;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
@@ -47,21 +48,46 @@ class FcmPushSender implements PushNotificationSender
                             'title' => $notification->title,
                             'body' => $notification->body,
                         ],
-                        'data' => array_map('strval', [
+                        // Deep-link keys (conversation_id, task_id, ...) let a tap
+                        // open the right screen; FCM data values must be strings.
+                        'data' => array_map('strval', array_filter([
+                            ...array_filter((array) $notification->data, 'is_scalar'),
                             'type' => $notification->type,
                             'reference_type' => (string) $notification->reference_type,
                             'reference_id' => (string) $notification->reference_id,
-                        ]),
+                            'notification_id' => (string) $notification->id,
+                        ], fn ($v) => $v !== null && $v !== '')),
+                        // High priority wakes the phone from Doze; the channel
+                        // (created by the app) makes it pop up like WhatsApp.
+                        'android' => [
+                            'priority' => 'high',
+                            'notification' => [
+                                'channel_id' => 'mchart_messages',
+                                'sound' => 'default',
+                                'tag' => $this->groupTag($notification),
+                            ],
+                        ],
                     ],
                 ]);
 
-            if ($response->failed()) {
+            if ($response->status() === 404 || $response->json('error.status') === 'UNREGISTERED') {
+                // App uninstalled or token rotated: stop trying this device.
+                Device::where('push_token', $token)->delete();
+            } elseif ($response->failed()) {
                 Log::warning('[fcm] send failed', [
                     'status' => $response->status(),
                     'body' => $response->json(),
                 ]);
             }
         }
+    }
+
+    /** One notification per chat in the tray: newer replaces older. */
+    private function groupTag(Notification $notification): string
+    {
+        $conversation = $notification->data['conversation_id'] ?? null;
+
+        return $conversation ? "conversation-{$conversation}" : "notification-{$notification->id}";
     }
 
     /**
