@@ -66,6 +66,7 @@ Route::middleware(['auth:sanctum', 'active'])->group(function () {
     Route::delete('conversations/{conversation}/participants/{user}', [ConversationParticipantController::class, 'destroy']);
     Route::get('conversations/{conversation}/messages', [MessageController::class, 'index']);
     Route::post('conversations/{conversation}/messages', [MessageController::class, 'store']);
+    Route::patch('conversations/{conversation}/messages/{message}', [MessageController::class, 'update']);
     Route::delete('conversations/{conversation}/messages/{message}', [MessageController::class, 'destroy']);
     Route::post('conversations/{conversation}/read', [MessageController::class, 'markRead']);
     Route::post('conversations/{conversation}/typing', [MessageController::class, 'typing']);

@@ -58,6 +58,30 @@ class ChatRepository {
     return Message.fromJson(json['data'] as Map<String, dynamic>);
   }
 
+  Future<Message> sendSticker(int conversationId, String stickerId) async {
+    final json = await _api.post<Map<String, dynamic>>(
+      '/conversations/$conversationId/messages',
+      data: {'type': 'sticker', 'body': stickerId},
+    );
+    return Message.fromJson(json['data'] as Map<String, dynamic>);
+  }
+
+  Future<Message> forward(int toConversationId, int messageId) async {
+    final json = await _api.post<Map<String, dynamic>>(
+      '/conversations/$toConversationId/messages',
+      data: {'forward_message_id': messageId},
+    );
+    return Message.fromJson(json['data'] as Map<String, dynamic>);
+  }
+
+  Future<Message> edit(int conversationId, int messageId, String body) async {
+    final json = await _api.patch<Map<String, dynamic>>(
+      '/conversations/$conversationId/messages/$messageId',
+      data: {'body': body},
+    );
+    return Message.fromJson(json['data'] as Map<String, dynamic>);
+  }
+
   Future<void> deleteMessage(int conversationId, int messageId) =>
       _api.delete('/conversations/$conversationId/messages/$messageId');
 

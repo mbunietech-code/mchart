@@ -111,12 +111,14 @@ enum MessageKind {
   text,
   file,
   image,
-  voice;
+  voice,
+  sticker;
 
   static MessageKind from(String? v) => switch (v) {
     'file' => file,
     'image' => image,
     'voice' => voice,
+    'sticker' => sticker,
     _ => text,
   };
 }

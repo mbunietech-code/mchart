@@ -19,8 +19,13 @@ class StoreMessageRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'body' => ['nullable', 'required_without:attachments', 'string', 'max:10000'],
+            'body' => [
+                'nullable', 'required_without_all:attachments,forward_message_id', 'string', 'max:10000',
+                // Stickers carry an id from the app's pack, never free text.
+                Rule::when($this->input('type') === MessageType::Sticker->value, ['regex:/^[a-z0-9_]{1,40}$/']),
+            ],
             'type' => ['nullable', Rule::enum(MessageType::class)],
+            'forward_message_id' => ['nullable', 'integer', 'exists:messages,id'],
             'reply_to_id' => ['nullable', 'integer', 'exists:messages,id'],
             'attachments' => ['nullable', 'array', 'max:10'],
             'attachments.*' => [

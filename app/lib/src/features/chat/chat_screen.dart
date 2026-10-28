@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -15,6 +16,7 @@ import '../../widgets/pills.dart';
 import '../../widgets/primitives.dart';
 import '../auth/auth_controller.dart';
 import 'chat_attachment_picker.dart';
+import 'chat_pickers.dart';
 import 'chat_repository.dart';
 import 'group_info_sheet.dart';
 import 'message_thread_controller.dart';
@@ -323,10 +325,7 @@ class _ConversationRow extends StatelessWidget {
     final other = conversation.otherParticipant(currentUserId);
     final title = conversation.titleFor(currentUserId);
     final preview =
-        conversation.latestMessage?.body ??
-        (conversation.latestMessage != null
-            ? '[attachment]'
-            : 'No messages yet');
+        conversation.latestMessage?.previewText ?? 'No messages yet';
 
     return InkWell(
       onTap: onTap,
@@ -447,14 +446,105 @@ class _ThreadPane extends ConsumerStatefulWidget {
 class _ThreadPaneState extends ConsumerState<_ThreadPane> {
   final _controller = TextEditingController();
   final _scroll = ScrollController();
+  final _inputFocus = FocusNode();
   Message? _replyTo;
+  Message? _editing;
   bool _attaching = false;
+  bool _showPanel = false;
 
   @override
   void dispose() {
     _controller.dispose();
     _scroll.dispose();
+    _inputFocus.dispose();
     super.dispose();
+  }
+
+  MessageThreadController get _thread =>
+      ref.read(messageThreadProvider(widget.conversationId).notifier);
+
+  void _toggleEmojiPanel() {
+    setState(() => _showPanel = !_showPanel);
+    if (_showPanel) {
+      _inputFocus.unfocus();
+    } else {
+      _inputFocus.requestFocus();
+    }
+  }
+
+  /// Inserts at the cursor (or replaces the selection), like a keyboard.
+  void _insertEmoji(String emoji) {
+    final v = _controller.value;
+    final sel = v.selection.isValid
+        ? v.selection
+        : TextSelection.collapsed(offset: v.text.length);
+    final text = v.text.replaceRange(sel.start, sel.end, emoji);
+    _controller.value = TextEditingValue(
+      text: text,
+      selection: TextSelection.collapsed(offset: sel.start + emoji.length),
+    );
+  }
+
+  Future<void> _sendSticker(ChatSticker sticker) async {
+    setState(() => _showPanel = false);
+    await _thread.sendSticker(sticker.id);
+    _scrollToEnd();
+  }
+
+  void _startEdit(Message m) {
+    setState(() {
+      _editing = m;
+      _replyTo = null;
+      _showPanel = false;
+    });
+    _controller.text = m.body ?? '';
+    _controller.selection = TextSelection.collapsed(
+      offset: _controller.text.length,
+    );
+    _inputFocus.requestFocus();
+  }
+
+  void _cancelEdit() {
+    setState(() => _editing = null);
+    _controller.clear();
+  }
+
+  Future<void> _copy(Message m) async {
+    await Clipboard.setData(ClipboardData(text: m.body ?? ''));
+    if (mounted) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Message copied')));
+    }
+  }
+
+  Future<void> _forward(Message m) async {
+    final targets = await showForwardSheet(
+      context,
+      excludeConversationId: widget.conversationId,
+    );
+    if (targets == null || targets.isEmpty || !mounted) return;
+    final repo = ref.read(chatRepositoryProvider);
+    final messenger = ScaffoldMessenger.of(context);
+    var failed = 0;
+    for (final id in targets) {
+      try {
+        await repo.forward(id, m.id);
+      } catch (_) {
+        failed++;
+      }
+    }
+    ref.invalidate(conversationsProvider);
+    final n = targets.length;
+    messenger.showSnackBar(
+      SnackBar(
+        content: Text(
+          failed == 0
+              ? 'Forwarded to $n chat${n == 1 ? '' : 's'}'
+              : 'Forwarded to ${n - failed} of $n chats',
+        ),
+      ),
+    );
   }
 
   void _scrollToEnd() {
@@ -469,12 +559,23 @@ class _ThreadPaneState extends ConsumerState<_ThreadPane> {
     });
   }
 
-  void _send() {
+  Future<void> _send() async {
     final text = _controller.text;
     if (text.trim().isEmpty) return;
-    ref
-        .read(messageThreadProvider(widget.conversationId).notifier)
-        .send(text, replyTo: _replyTo);
+    final editing = _editing;
+    if (editing != null) {
+      final error = await _thread.editMessage(editing.id, text);
+      if (!mounted) return;
+      if (error != null) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(error)));
+        return;
+      }
+      _cancelEdit();
+      return;
+    }
+    _thread.send(text, replyTo: _replyTo);
     _controller.clear();
     setState(() => _replyTo = null);
     _scrollToEnd();
@@ -563,6 +664,13 @@ class _ThreadPaneState extends ConsumerState<_ThreadPane> {
                                 msg.senderId != widget.currentUserId &&
                                 (prev == null || prev.senderId != msg.senderId),
                             onReply: () => _reply(msg),
+                            onCopy: msg.isSticker || (msg.body ?? '').isEmpty
+                                ? null
+                                : () => _copy(msg),
+                            onForward: msg.pending ? null : () => _forward(msg),
+                            onEdit: msg.canEdit(widget.currentUserId)
+                                ? () => _startEdit(msg)
+                                : null,
                             onDelete: msg.id > 0
                                 ? () => ref
                                       .read(
@@ -598,9 +706,14 @@ class _ThreadPaneState extends ConsumerState<_ThreadPane> {
           ),
         _Composer(
           controller: _controller,
+          focusNode: _inputFocus,
           onSend: _send,
           sending: state.sending || _attaching,
           replyTo: _replyTo,
+          editing: _editing,
+          onCancelEdit: _cancelEdit,
+          emojiPanelOpen: _showPanel,
+          onToggleEmoji: _toggleEmojiPanel,
           onCancelReply: () => setState(() => _replyTo = null),
           onAttach: () => _attach(),
           onAttachAudio: () => _attach(audioOnly: true),
@@ -608,6 +721,8 @@ class _ThreadPaneState extends ConsumerState<_ThreadPane> {
               .read(messageThreadProvider(widget.conversationId).notifier)
               .notifyTyping(),
         ),
+        if (_showPanel)
+          EmojiStickerPanel(onEmoji: _insertEmoji, onSticker: _sendSticker),
       ],
     );
   }
@@ -742,11 +857,17 @@ class _MessageBubble extends StatelessWidget {
     this.onReply,
     this.onDelete,
     this.onReact,
+    this.onCopy,
+    this.onForward,
+    this.onEdit,
   });
   final Message message;
   final bool mine;
   final bool showAuthor;
   final VoidCallback? onReply;
+  final VoidCallback? onCopy;
+  final VoidCallback? onForward;
+  final VoidCallback? onEdit;
   final VoidCallback? onDelete;
   final void Function(String emoji, bool mine)? onReact;
 
@@ -800,6 +921,33 @@ class _MessageBubble extends StatelessWidget {
                   onReply?.call();
                 },
               ),
+              if (onCopy != null)
+                ListTile(
+                  leading: const Icon(Icons.copy_rounded),
+                  title: const Text('Copy'),
+                  onTap: () {
+                    Navigator.of(context).pop();
+                    onCopy!.call();
+                  },
+                ),
+              if (onForward != null)
+                ListTile(
+                  leading: const Icon(Icons.shortcut_rounded),
+                  title: const Text('Forward'),
+                  onTap: () {
+                    Navigator.of(context).pop();
+                    onForward!.call();
+                  },
+                ),
+              if (onEdit != null)
+                ListTile(
+                  leading: const Icon(Icons.edit_outlined),
+                  title: const Text('Edit'),
+                  onTap: () {
+                    Navigator.of(context).pop();
+                    onEdit!.call();
+                  },
+                ),
               if (mine && onDelete != null)
                 ListTile(
                   leading: const Icon(
@@ -878,76 +1026,116 @@ class _MessageBubble extends StatelessWidget {
                 ),
               ),
             ),
-          GestureDetector(
-            onLongPress: () => _openMenu(context),
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 460),
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 9,
-                ),
-                decoration: BoxDecoration(
-                  color: bg,
-                  borderRadius: BorderRadius.only(
-                    topLeft: const Radius.circular(12),
-                    topRight: const Radius.circular(12),
-                    bottomLeft: Radius.circular(mine ? 12 : 3),
-                    bottomRight: Radius.circular(mine ? 3 : 12),
-                  ),
-                  border: mine ? null : Border.all(color: AppColor.border),
-                  boxShadow: mine ? null : AppShadow.card,
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    if (message.replyTo != null)
-                      _ReplyPreview(reply: message.replyTo!, mine: mine),
-                    for (final a in message.attachments) ...[
-                      _Attachment(attachment: a, mine: mine),
-                      const SizedBox(height: 6),
-                    ],
-                    if (message.body != null && message.body!.isNotEmpty)
-                      Text(
-                        message.body!,
-                        style: TextStyle(
-                          color: fg,
-                          fontSize: 13.5,
-                          height: 1.4,
-                        ),
+          if (message.isSticker)
+            GestureDetector(
+              onLongPress: () => _openMenu(context),
+              child: Column(
+                crossAxisAlignment: mine
+                    ? CrossAxisAlignment.end
+                    : CrossAxisAlignment.start,
+                children: [
+                  if (message.forwarded)
+                    const _ForwardedLabel(color: AppColor.textMuted),
+                  StickerView(stickerId: message.body),
+                  Padding(
+                    padding: const EdgeInsets.only(top: 2),
+                    child: Text(
+                      Fmt.time(message.createdAt),
+                      style: const TextStyle(
+                        fontSize: 10,
+                        color: AppColor.textMuted,
                       ),
-                    const SizedBox(height: 3),
-                    Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
+                    ),
+                  ),
+                ],
+              ),
+            )
+          else
+            GestureDetector(
+              onLongPress: () => _openMenu(context),
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 460),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 9,
+                  ),
+                  decoration: BoxDecoration(
+                    color: bg,
+                    borderRadius: BorderRadius.only(
+                      topLeft: const Radius.circular(12),
+                      topRight: const Radius.circular(12),
+                      bottomLeft: Radius.circular(mine ? 12 : 3),
+                      bottomRight: Radius.circular(mine ? 3 : 12),
+                    ),
+                    border: mine ? null : Border.all(color: AppColor.border),
+                    boxShadow: mine ? null : AppShadow.card,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      if (message.forwarded)
+                        _ForwardedLabel(
+                          color: mine ? Colors.white70 : AppColor.textMuted,
+                        ),
+                      if (message.replyTo != null)
+                        _ReplyPreview(reply: message.replyTo!, mine: mine),
+                      for (final a in message.attachments) ...[
+                        _Attachment(attachment: a, mine: mine),
+                        const SizedBox(height: 6),
+                      ],
+                      if (message.body != null && message.body!.isNotEmpty)
                         Text(
-                          Fmt.time(message.createdAt),
+                          message.body!,
                           style: TextStyle(
-                            fontSize: 10,
-                            color: mine ? Colors.white70 : AppColor.textMuted,
+                            color: fg,
+                            fontSize: 13.5,
+                            height: 1.4,
                           ),
                         ),
-                        if (mine) ...[
-                          const SizedBox(width: 3),
-                          Icon(
-                            message.pending
-                                ? Icons.schedule_rounded
-                                : message.readBy.length > 1
-                                ? Icons.done_all_rounded
-                                : Icons.done_rounded,
-                            size: 13,
-                            color: message.readBy.length > 1
-                                ? Colors.white
-                                : Colors.white70,
+                      const SizedBox(height: 3),
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (message.editedAt != null)
+                            Text(
+                              'Edited · ',
+                              style: TextStyle(
+                                fontSize: 10,
+                                fontStyle: FontStyle.italic,
+                                color: mine
+                                    ? Colors.white70
+                                    : AppColor.textMuted,
+                              ),
+                            ),
+                          Text(
+                            Fmt.time(message.createdAt),
+                            style: TextStyle(
+                              fontSize: 10,
+                              color: mine ? Colors.white70 : AppColor.textMuted,
+                            ),
                           ),
+                          if (mine) ...[
+                            const SizedBox(width: 3),
+                            Icon(
+                              message.pending
+                                  ? Icons.schedule_rounded
+                                  : message.readBy.length > 1
+                                  ? Icons.done_all_rounded
+                                  : Icons.done_rounded,
+                              size: 13,
+                              color: message.readBy.length > 1
+                                  ? Colors.white
+                                  : Colors.white70,
+                            ),
+                          ],
                         ],
-                      ],
-                    ),
-                  ],
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
-          ),
           if (message.reactions.isNotEmpty)
             Padding(
               padding: const EdgeInsets.only(top: 4),
@@ -981,6 +1169,135 @@ class _MessageBubble extends StatelessWidget {
                 ],
               ),
             ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ForwardedLabel extends StatelessWidget {
+  const _ForwardedLabel({required this.color});
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.only(bottom: 3),
+    child: Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(Icons.shortcut_rounded, size: 13, color: color),
+        const SizedBox(width: 3),
+        Text(
+          'Forwarded',
+          style: TextStyle(
+            fontSize: 11,
+            fontStyle: FontStyle.italic,
+            color: color,
+          ),
+        ),
+      ],
+    ),
+  );
+}
+
+/// Pick one or more chats to forward a message to.
+Future<List<int>?> showForwardSheet(
+  BuildContext context, {
+  required int excludeConversationId,
+}) {
+  return showModalBottomSheet<List<int>>(
+    context: context,
+    isScrollControlled: true,
+    useSafeArea: true,
+    builder: (_) => _ForwardSheet(excludeConversationId: excludeConversationId),
+  );
+}
+
+class _ForwardSheet extends ConsumerStatefulWidget {
+  const _ForwardSheet({required this.excludeConversationId});
+  final int excludeConversationId;
+
+  @override
+  ConsumerState<_ForwardSheet> createState() => _ForwardSheetState();
+}
+
+class _ForwardSheetState extends ConsumerState<_ForwardSheet> {
+  final _selected = <int>{};
+  String _query = '';
+
+  @override
+  Widget build(BuildContext context) {
+    final me = ref.watch(currentUserProvider);
+    final conversations =
+        ref.watch(conversationsProvider).valueOrNull ?? const [];
+    final options = conversations
+        .where((c) => c.id != widget.excludeConversationId)
+        .where(
+          (c) => c
+              .titleFor(me?.id ?? 0)
+              .toLowerCase()
+              .contains(_query.toLowerCase()),
+        )
+        .toList();
+
+    return SizedBox(
+      height: MediaQuery.sizeOf(context).height * 0.7,
+      child: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    'Forward to…',
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                ),
+                FilledButton(
+                  onPressed: _selected.isEmpty
+                      ? null
+                      : () => Navigator.pop(context, _selected.toList()),
+                  child: Text(
+                    _selected.isEmpty ? 'Send' : 'Send (${_selected.length})',
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: TextField(
+              decoration: const InputDecoration(
+                hintText: 'Search chats...',
+                prefixIcon: Icon(Icons.search_rounded, size: 18),
+              ),
+              onChanged: (v) => setState(() => _query = v),
+            ),
+          ),
+          Expanded(
+            child: options.isEmpty
+                ? const Center(child: Text('No other chats to forward to.'))
+                : ListView(
+                    children: [
+                      for (final c in options)
+                        CheckboxListTile(
+                          value: _selected.contains(c.id),
+                          onChanged: (v) => setState(
+                            () => v == true
+                                ? _selected.add(c.id)
+                                : _selected.remove(c.id),
+                          ),
+                          title: Text(c.titleFor(me?.id ?? 0)),
+                          secondary: Icon(
+                            c.type == ConversationType.direct
+                                ? Icons.person_outline_rounded
+                                : Icons.groups_outlined,
+                          ),
+                        ),
+                    ],
+                  ),
+          ),
         ],
       ),
     );
@@ -1183,30 +1500,87 @@ class _VoiceNote extends StatelessWidget {
 class _Composer extends StatelessWidget {
   const _Composer({
     required this.controller,
+    required this.focusNode,
     required this.onSend,
     required this.sending,
     this.replyTo,
+    this.editing,
+    this.onCancelEdit,
+    this.emojiPanelOpen = false,
+    this.onToggleEmoji,
     this.onCancelReply,
     this.onAttach,
     this.onAttachAudio,
     this.onTyping,
   });
   final TextEditingController controller;
+  final FocusNode focusNode;
   final VoidCallback onSend;
   final bool sending;
   final Message? replyTo;
+  final Message? editing;
+  final VoidCallback? onCancelEdit;
+  final bool emojiPanelOpen;
+  final VoidCallback? onToggleEmoji;
   final VoidCallback? onCancelReply;
   final VoidCallback? onAttach;
   final VoidCallback? onAttachAudio;
   final VoidCallback? onTyping;
 
+  /// Desktop/web: Enter sends, Shift+Enter breaks the line. Phones keep
+  /// their keyboard's own send/newline keys.
+  KeyEventResult _onKey(FocusNode node, KeyEvent e) {
+    if (e is! KeyDownEvent) return KeyEventResult.ignored;
+    final enter =
+        e.logicalKey == LogicalKeyboardKey.enter ||
+        e.logicalKey == LogicalKeyboardKey.numpadEnter;
+    if (!enter || HardwareKeyboard.instance.isShiftPressed) {
+      return KeyEventResult.ignored;
+    }
+    if (!sending) onSend();
+    return KeyEventResult.handled;
+  }
+
   @override
   Widget build(BuildContext context) {
+    final narrow = MediaQuery.sizeOf(context).width < 720;
     return Container(
       color: AppColor.surface,
-      padding: const EdgeInsets.fromLTRB(16, 10, 16, 12),
+      padding: EdgeInsets.fromLTRB(narrow ? 8 : 16, 10, narrow ? 8 : 16, 12),
       child: Column(
         children: [
+          if (editing != null)
+            Container(
+              margin: const EdgeInsets.only(bottom: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+              decoration: BoxDecoration(
+                color: AppColor.accentSoft,
+                borderRadius: AppRadius.md,
+                border: const Border(
+                  left: BorderSide(color: AppColor.accent, width: 3),
+                ),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.edit_outlined, size: 16),
+                  Gap.sm,
+                  Expanded(
+                    child: Text(
+                      'Editing message',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                  IconButton(
+                    iconSize: 16,
+                    tooltip: 'Cancel edit',
+                    icon: const Icon(Icons.close_rounded),
+                    onPressed: onCancelEdit,
+                  ),
+                ],
+              ),
+            ),
           if (replyTo != null)
             Container(
               margin: const EdgeInsets.only(bottom: 8),
@@ -1256,18 +1630,35 @@ class _Composer extends StatelessWidget {
           Row(
             children: [
               IconButton(
-                onPressed: sending ? null : onAttach,
-                icon: const Icon(Icons.attach_file_rounded, size: 20),
+                tooltip: emojiPanelOpen ? 'Keyboard' : 'Emoji & stickers',
+                onPressed: onToggleEmoji,
+                icon: Icon(
+                  emojiPanelOpen
+                      ? Icons.keyboard_rounded
+                      : Icons.emoji_emotions_outlined,
+                  size: 22,
+                ),
               ),
-              IconButton(
-                onPressed: sending ? null : onAttachAudio,
-                icon: const Icon(Icons.mic_none_rounded, size: 20),
-              ),
+              if (editing == null) ...[
+                IconButton(
+                  tooltip: 'Attach',
+                  onPressed: sending ? null : onAttach,
+                  icon: const Icon(Icons.attach_file_rounded, size: 20),
+                ),
+                IconButton(
+                  tooltip: 'Voice note',
+                  onPressed: sending ? null : onAttachAudio,
+                  icon: const Icon(Icons.mic_none_rounded, size: 20),
+                ),
+              ],
               Expanded(
                 child: TextField(
                   controller: controller,
+                  focusNode: focusNode..onKeyEvent = narrow ? null : _onKey,
                   minLines: 1,
                   maxLines: 5,
+                  keyboardType: TextInputType.multiline,
+                  textCapitalization: TextCapitalization.sentences,
                   textInputAction: TextInputAction.send,
                   onSubmitted: (_) => onSend(),
                   onChanged: (v) {
@@ -1287,19 +1678,23 @@ class _Composer extends StatelessWidget {
                   padding: EdgeInsets.zero,
                   shape: const CircleBorder(),
                 ),
-                child: const Icon(Icons.send_rounded, size: 18),
+                child: Icon(
+                  editing != null ? Icons.check_rounded : Icons.send_rounded,
+                  size: 18,
+                ),
               ),
             ],
           ),
-          Padding(
-            padding: const EdgeInsets.only(top: 4),
-            child: Text(
-              'Enter to send · Shift + Enter for a new line',
-              style: Theme.of(
-                context,
-              ).textTheme.bodySmall?.copyWith(fontSize: 10.5),
+          if (!narrow)
+            Padding(
+              padding: const EdgeInsets.only(top: 4),
+              child: Text(
+                'Enter to send · Shift + Enter for a new line',
+                style: Theme.of(
+                  context,
+                ).textTheme.bodySmall?.copyWith(fontSize: 10.5),
+              ),
             ),
-          ),
         ],
       ),
     );

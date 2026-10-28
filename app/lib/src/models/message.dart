@@ -92,6 +92,8 @@ class Message {
     this.replyTo,
     this.deleted = false,
     this.pending = false,
+    this.forwarded = false,
+    this.editedAt,
   });
 
   final int id;
@@ -107,6 +109,48 @@ class Message {
   final bool deleted;
   final DateTime createdAt;
   final bool pending;
+  final bool forwarded;
+  final DateTime? editedAt;
+
+  bool get isSticker => kind == MessageKind.sticker;
+
+  /// One-line summary for lists and reply/forward previews.
+  String get previewText {
+    if (deleted) return 'Message deleted';
+    if (isSticker) return 'Sticker';
+    if (body != null && body!.isNotEmpty) return body!;
+    return switch (kind) {
+      MessageKind.image => 'Photo',
+      MessageKind.voice => 'Voice note',
+      _ => 'Attachment',
+    };
+  }
+
+  /// Own text messages can be edited for 15 minutes (server enforces too).
+  bool canEdit(int? userId) =>
+      !deleted &&
+      !pending &&
+      senderId == userId &&
+      kind == MessageKind.text &&
+      DateTime.now().difference(createdAt) < const Duration(minutes: 15);
+
+  Message copyWith({String? body, DateTime? editedAt}) => Message(
+    id: id,
+    conversationId: conversationId,
+    kind: kind,
+    createdAt: createdAt,
+    senderId: senderId,
+    sender: sender,
+    body: body ?? this.body,
+    readBy: readBy,
+    attachments: attachments,
+    reactions: reactions,
+    replyTo: replyTo,
+    deleted: deleted,
+    pending: pending,
+    forwarded: forwarded,
+    editedAt: editedAt ?? this.editedAt,
+  );
 
   factory Message.fromJson(Map<String, dynamic> j) => Message(
     id: (j['id'] as num).toInt(),
@@ -129,6 +173,8 @@ class Message {
         : null,
     deleted: j['deleted'] as bool? ?? false,
     createdAt: _date(j['created_at']) ?? DateTime.now(),
+    forwarded: j['forwarded'] as bool? ?? false,
+    editedAt: _date(j['edited_at']),
   );
 }
 

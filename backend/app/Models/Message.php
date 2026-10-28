@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-#[Fillable(['conversation_id', 'sender_id', 'reply_to_id', 'body', 'type', 'read_by', 'deleted_at'])]
+#[Fillable(['conversation_id', 'sender_id', 'reply_to_id', 'forwarded', 'body', 'type', 'read_by', 'edited_at', 'deleted_at'])]
 class Message extends Model
 {
     use HasFactory;
@@ -20,6 +20,8 @@ class Message extends Model
             'type' => MessageType::class,
             'read_by' => 'array',
             'deleted_at' => 'datetime',
+            'edited_at' => 'datetime',
+            'forwarded' => 'boolean',
         ];
     }
 

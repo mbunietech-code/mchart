@@ -8,4 +8,7 @@ enum MessageType: string
     case File = 'file';
     case Image = 'image';
     case Voice = 'voice';
+
+    /** Body holds a sticker id from the app's built-in pack. */
+    case Sticker = 'sticker';
 }

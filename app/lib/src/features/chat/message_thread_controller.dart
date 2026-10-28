@@ -214,6 +214,33 @@ class MessageThreadController extends StateNotifier<MessageThreadState> {
     }
   }
 
+  Future<void> sendSticker(String stickerId) async {
+    try {
+      final saved = await _repo.sendSticker(conversationId, stickerId);
+      if (state.messages.any((m) => m.id == saved.id)) return;
+      state = state.copyWith(messages: [...state.messages, saved]);
+    } catch (e) {
+      state = state.copyWith(error: e.toString());
+    }
+  }
+
+  /// Returns null on success, or the error to show.
+  Future<String?> editMessage(int messageId, String body) async {
+    final text = body.trim();
+    if (text.isEmpty) return 'Message cannot be empty.';
+    try {
+      final updated = await _repo.edit(conversationId, messageId, text);
+      state = state.copyWith(
+        messages: [
+          for (final m in state.messages) m.id == messageId ? updated : m,
+        ],
+      );
+      return null;
+    } catch (e) {
+      return e.toString();
+    }
+  }
+
   Future<void> deleteMessage(int messageId) async {
     try {
       await _repo.deleteMessage(conversationId, messageId);

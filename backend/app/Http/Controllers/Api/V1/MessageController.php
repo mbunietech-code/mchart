@@ -20,6 +20,9 @@ use Illuminate\Support\Str;
 
 class MessageController extends Controller
 {
+    /** Same window WhatsApp gives. */
+    public const EDIT_WINDOW_MINUTES = 15;
+
     public function __construct(
         private readonly AttachmentStorage $storage,
         private readonly NotificationService $notifications,
@@ -52,14 +55,34 @@ class MessageController extends Controller
             $type = $files ? $this->typeFor($files[0]->getClientMimeType()) : MessageType::Text->value;
         }
 
-        $message = DB::transaction(function () use ($request, $conversation, $files, $type) {
+        // Forwarding copies another message the sender can see.
+        $source = null;
+        if ($request->filled('forward_message_id')) {
+            $source = Message::with('attachments', 'conversation')->findOrFail($request->integer('forward_message_id'));
+            $this->authorize('view', $source->conversation);
+            abort_if($source->isDeleted(), 422, 'A deleted message cannot be forwarded.');
+            $type = $source->type->value;
+        }
+
+        $message = DB::transaction(function () use ($request, $conversation, $files, $type, $source) {
             $message = $conversation->messages()->create([
                 'sender_id' => $request->user()->id,
-                'reply_to_id' => $request->input('reply_to_id'),
-                'body' => $request->input('body'),
+                'reply_to_id' => $source ? null : $request->input('reply_to_id'),
+                'forwarded' => $source !== null,
+                'body' => $source ? $source->body : $request->input('body'),
                 'type' => $type,
                 'read_by' => [$request->user()->id],
             ]);
+
+            foreach ($source?->attachments ?? [] as $a) {
+                $message->attachments()->create([
+                    'file_path' => $this->storage->copy($a->file_path, "conversations/{$conversation->id}"),
+                    'file_name' => $a->file_name,
+                    'file_type' => $a->file_type,
+                    'file_size' => $a->file_size,
+                    'duration_seconds' => $a->duration_seconds,
+                ]);
+            }
 
             foreach ($files as $i => $file) {
                 $meta = $this->storage->store($file, "conversations/{$conversation->id}");
@@ -126,6 +149,24 @@ class MessageController extends Controller
         return response()->json(['message' => 'Marked as read.']);
     }
 
+    /** Fix a typo: own text messages, within the edit window. */
+    public function update(Request $request, Conversation $conversation, Message $message): MessageResource
+    {
+        abort_unless($message->conversation_id === $conversation->id, 404);
+        abort_unless($message->sender_id === $request->user()->id, 403);
+        abort_if($message->isDeleted() || $message->type !== MessageType::Text, 422, 'Only text messages can be edited.');
+        abort_if(
+            $message->created_at->lt(now()->subMinutes(self::EDIT_WINDOW_MINUTES)),
+            422,
+            'Messages can only be edited within '.self::EDIT_WINDOW_MINUTES.' minutes.',
+        );
+
+        $data = $request->validate(['body' => ['required', 'string', 'max:10000']]);
+        $message->update(['body' => $data['body'], 'edited_at' => now()]);
+
+        return new MessageResource($message->load('sender', 'attachments', 'replyTo.sender', 'reactions'));
+    }
+
     public function destroy(Request $request, Conversation $conversation, Message $message): JsonResponse
     {
         abort_unless($message->conversation_id === $conversation->id, 404);
@@ -149,9 +190,11 @@ class MessageController extends Controller
             ->where('users.id', '!=', $message->sender_id)
             ->get();
 
-        $preview = $message->body
-            ? Str::limit($message->body, 120)
-            : '[attachment]';
+        $preview = match (true) {
+            $message->type === MessageType::Sticker => '[sticker]',
+            (bool) $message->body => Str::limit($message->body, 120),
+            default => '[attachment]',
+        };
 
         $title = $conversation->name
             ? "{$message->sender->name} in {$conversation->name}"

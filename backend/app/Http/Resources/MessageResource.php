@@ -21,6 +21,8 @@ class MessageResource extends JsonResource
             'type' => $this->type->value,
             'read_by' => $this->read_by ?? [],
             'deleted' => $deleted,
+            'forwarded' => (bool) $this->forwarded,
+            'edited_at' => $deleted ? null : $this->edited_at,
             'attachments' => $deleted
                 ? []
                 : MessageAttachmentResource::collection($this->whenLoaded('attachments')),
