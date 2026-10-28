@@ -19,7 +19,10 @@ class ApiClient {
           handler.next(options);
         },
         onError: (e, handler) {
-          if (e.response?.statusCode == 401) {
+          // Only a rejected token ends the session; a call that went out
+          // without one says nothing about the stored session.
+          if (e.response?.statusCode == 401 &&
+              e.requestOptions.headers.containsKey('Authorization')) {
             _onUnauthorized?.call();
           }
           handler.next(e);
@@ -27,8 +30,23 @@ class ApiClient {
       ),
     );
     if (kDebugMode) {
+      // One line per call. Never log headers or bodies: they carry the
+      // bearer token and, on login, the password.
       dio.interceptors.add(
-        LogInterceptor(requestBody: true, responseBody: false),
+        InterceptorsWrapper(
+          onRequest: (o, h) {
+            o.extra['t0'] = DateTime.now();
+            h.next(o);
+          },
+          onResponse: (r, h) {
+            debugPrint(_logLine(r.requestOptions, r.statusCode));
+            h.next(r);
+          },
+          onError: (e, h) {
+            debugPrint(_logLine(e.requestOptions, e.response?.statusCode));
+            h.next(e);
+          },
+        ),
       );
     }
   }
@@ -40,6 +58,15 @@ class ApiClient {
     headers: {'Accept': 'application/json'},
     validateStatus: (s) => s != null && s < 400,
   );
+
+  static String _logLine(RequestOptions o, int? status) {
+    final t0 = o.extra['t0'];
+    final ms = t0 is DateTime
+        ? DateTime.now().difference(t0).inMilliseconds
+        : null;
+    return '[api] ${o.method} ${o.uri.path}${o.uri.hasQuery ? '?${o.uri.query}' : ''}'
+        ' → ${status ?? 'ERR'}${ms != null ? ' ${ms}ms' : ''}';
+  }
 
   final Dio dio;
   final TokenStore _tokens;

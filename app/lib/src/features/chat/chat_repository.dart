@@ -1,7 +1,10 @@
+import 'dart:async';
+
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/api_client.dart';
+import '../../core/env.dart';
 import '../../core/providers.dart';
 import '../../models/message.dart';
 import '../../models/paginated.dart';
@@ -126,5 +129,10 @@ final chatRepositoryProvider = Provider(
 );
 
 final conversationsProvider = FutureProvider<List<Conversation>>((ref) {
+  // No WebSocket to push unread counts / last-message previews: refetch.
+  if (!Env.realtimeEnabled) {
+    final t = Timer(const Duration(seconds: 15), ref.invalidateSelf);
+    ref.onDispose(t.cancel);
+  }
   return ref.watch(chatRepositoryProvider).conversations();
 });

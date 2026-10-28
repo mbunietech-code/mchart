@@ -24,11 +24,18 @@ class _MChartAppState extends ConsumerState<MChartApp> {
   @override
   Widget build(BuildContext context) {
     final router = ref.watch(routerProvider);
+    // Until bootstrap has read the stored token, keep the shell out of the
+    // tree: its screens fetch on build, and a token-less 401 there would
+    // sign the user out.
+    final booting = ref.watch(authControllerProvider) is AuthUnknown;
     return MaterialApp.router(
       title: 'MChart',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light(),
       routerConfig: router,
+      builder: (context, child) => booting
+          ? const Scaffold(body: Center(child: CircularProgressIndicator()))
+          : child!,
     );
   }
 }

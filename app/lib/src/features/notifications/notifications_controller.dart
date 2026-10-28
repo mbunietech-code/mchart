@@ -1,7 +1,10 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/api_client.dart';
+import '../../core/env.dart';
 import '../../core/providers.dart';
 import '../../models/app_notification.dart';
 import '../auth/auth_controller.dart';
@@ -24,10 +27,14 @@ class NotificationsController extends StateNotifier<NotificationsState> {
   NotificationsController(this._ref) : super(const NotificationsState()) {
     _load();
     _subscribe();
+    if (!Env.realtimeEnabled) {
+      _poll = Timer.periodic(const Duration(seconds: 30), (_) => _load());
+    }
   }
 
   final Ref _ref;
   VoidCallback? _unsub;
+  Timer? _poll;
 
   ApiClient get _api => _ref.read(apiClientProvider);
 
@@ -82,6 +89,7 @@ class NotificationsController extends StateNotifier<NotificationsState> {
   @override
   void dispose() {
     _unsub?.call();
+    _poll?.cancel();
     super.dispose();
   }
 }

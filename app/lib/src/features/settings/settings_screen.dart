@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -713,10 +715,11 @@ class _RolesTab extends StatelessWidget {
       padding: EdgeInsets.zero,
       child: SingleChildScrollView(
         scrollDirection: Axis.horizontal,
-        child: ConstrainedBox(
-          constraints: BoxConstraints(
-            minWidth: MediaQuery.sizeOf(context).width - 56,
-          ),
+        // A horizontal scroll gives its child unbounded width, so the rows'
+        // Expanded cells need a fixed width: the card's width, but never
+        // narrower than the table can be read at (phones scroll sideways).
+        child: SizedBox(
+          width: math.max(MediaQuery.sizeOf(context).width - 56, 520),
           child: Column(
             children: [
               Container(

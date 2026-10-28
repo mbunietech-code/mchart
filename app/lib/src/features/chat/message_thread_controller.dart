@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/env.dart';
 import '../../core/providers.dart';
 import '../../models/enums.dart';
 import '../../models/message.dart';
@@ -45,6 +46,11 @@ class MessageThreadController extends StateNotifier<MessageThreadState> {
     : super(const MessageThreadState()) {
     _load();
     _subscribe();
+    // Without the WebSocket layer (shared hosting can't run Reverb) nothing
+    // pushes new messages, reactions or deletions — poll the open thread.
+    if (!Env.realtimeEnabled) {
+      _poll = Timer.periodic(const Duration(seconds: 4), (_) => _pollOnce());
+    }
   }
 
   final Ref _ref;
@@ -52,6 +58,8 @@ class MessageThreadController extends StateNotifier<MessageThreadState> {
   VoidCallback? _unsub;
   VoidCallback? _unsubTyping;
   Timer? _typingSendCooldown;
+  Timer? _poll;
+  bool _polling = false;
   final Map<int, Timer> _typingExpiry = {};
   final Map<int, String> _typingNames = {};
 
@@ -66,6 +74,37 @@ class MessageThreadController extends StateNotifier<MessageThreadState> {
       state = state.copyWith(loading: false, error: e.toString());
     }
   }
+
+  Future<void> _pollOnce() async {
+    if (_polling || state.loading) return;
+    _polling = true;
+    try {
+      final fresh = await _repo.messages(conversationId);
+      if (!mounted || _signature(fresh) == _signature(_confirmed)) return;
+      final hadNew =
+          fresh.isNotEmpty &&
+          (_confirmed.isEmpty || fresh.last.id != _confirmed.last.id);
+      state = state.copyWith(
+        messages: [...fresh, ...state.messages.where((m) => m.pending)],
+      );
+      if (hadNew) unawaited(_repo.markRead(conversationId));
+    } catch (_) {
+      // Transient network failure: the next tick retries.
+    } finally {
+      _polling = false;
+    }
+  }
+
+  List<Message> get _confirmed =>
+      state.messages.where((m) => !m.pending).toList();
+
+  /// What a poll can change: new/removed messages, deletions, reactions,
+  /// read receipts.
+  static String _signature(List<Message> ms) => [
+    for (final m in ms)
+      '${m.id}:${m.deleted ? 1 : 0}:${m.readBy.length}:'
+          '${m.reactions.map((r) => '${r.emoji}${r.count}').join()}',
+  ].join(',');
 
   void _subscribe() {
     final rt = _ref.read(realtimeClientProvider)..connect();
@@ -105,7 +144,9 @@ class MessageThreadController extends StateNotifier<MessageThreadState> {
   /// Call on every composer keystroke — throttled so it posts at most once
   /// every 3s instead of on every keypress.
   void notifyTyping() {
-    if (_typingSendCooldown != null) return;
+    // Typing events only reach others over the WebSocket; don't post them
+    // when it's off.
+    if (!Env.realtimeEnabled || _typingSendCooldown != null) return;
     unawaited(_repo.sendTyping(conversationId));
     _typingSendCooldown = Timer(
       const Duration(seconds: 3),
@@ -225,6 +266,7 @@ class MessageThreadController extends StateNotifier<MessageThreadState> {
     _unsub?.call();
     _unsubTyping?.call();
     _typingSendCooldown?.cancel();
+    _poll?.cancel();
     for (final t in _typingExpiry.values) {
       t.cancel();
     }

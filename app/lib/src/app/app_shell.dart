@@ -8,7 +8,6 @@ import '../features/auth/auth_controller.dart';
 import '../features/chat/chat_repository.dart';
 import '../features/notifications/notifications_controller.dart';
 import '../features/notifications/notifications_panel.dart';
-import '../models/enums.dart';
 import '../models/user.dart';
 import '../theme/app_color.dart';
 import '../theme/app_spacing.dart';
