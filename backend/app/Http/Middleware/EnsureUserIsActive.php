@@ -20,6 +20,12 @@ class EnsureUserIsActive
             abort(403, 'Your account has been deactivated. Contact an administrator.');
         }
 
+        // Presence ("online" / "last seen"): every API call counts as activity,
+        // written at most once a minute per user.
+        if ($user && (! $user->last_seen_at || $user->last_seen_at->lt(now()->subMinute()))) {
+            $user->forceFill(['last_seen_at' => now()])->saveQuietly();
+        }
+
         return $next($request);
     }
 }
