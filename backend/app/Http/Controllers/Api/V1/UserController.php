@@ -12,6 +12,7 @@ use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
@@ -128,6 +129,40 @@ class UserController extends Controller
         }
 
         return new UserResource($user->load('department', 'role'));
+    }
+
+    /**
+     * Permanently remove an account that was never really used (typically a
+     * mistyped or unwanted invitation), freeing its email for a new invite.
+     * Anyone with history is refused: deleting them would cascade away tasks
+     * and conversations other people rely on, so deactivate them instead.
+     */
+    public function forceDestroy(Request $request, User $user): JsonResponse
+    {
+        abort_if($user->is($request->user()), 422, 'You cannot delete your own account.');
+
+        $history = [
+            'messages' => DB::table('messages')->where('sender_id', $user->id)->exists(),
+            'tasks' => DB::table('tasks')->where('created_by', $user->id)->orWhere('assigned_to', $user->id)->exists(),
+            'task comments' => DB::table('task_comments')->where('user_id', $user->id)->exists(),
+            'conversations' => DB::table('conversations')->where('created_by', $user->id)->exists(),
+            'announcements' => DB::table('announcements')->where('author_id', $user->id)->exists(),
+        ];
+        $used = array_keys(array_filter($history));
+
+        if ($used !== []) {
+            return response()->json([
+                'message' => 'This account has '.implode(', ', $used).' that other people rely on. Deactivate it instead.',
+                'code' => 'user_has_history',
+            ], 422);
+        }
+
+        DB::transaction(function () use ($user) {
+            $user->tokens()->delete();
+            $user->delete(); // devices, notifications, memberships cascade
+        });
+
+        return response()->json(['message' => 'User deleted.']);
     }
 
     public function destroy(User $user): JsonResponse

@@ -114,6 +114,35 @@ class UserInvitationTest extends TestCase
         $this->assertDatabaseHas('users', ['email' => 'neema@example.com']);
     }
 
+    public function test_unused_invite_can_be_deleted_and_email_reused(): void
+    {
+        Mail::fake();
+        $id = $this->invite()->json('data.id');
+        $admin = User::where('email', '!=', 'neema@example.com')->first();
+
+        $this->actingAs($admin)->deleteJson("/api/v1/users/{$id}/permanent")->assertOk();
+        $this->assertDatabaseMissing('users', ['email' => 'neema@example.com']);
+
+        $this->invite()->assertCreated(); // email is free again
+    }
+
+    public function test_user_with_history_cannot_be_deleted_and_admin_cannot_delete_self(): void
+    {
+        $dept = \App\Models\Department::factory()->create();
+        $admin = $this->admin();
+        [$a, $b] = [$this->staff($dept), $this->staff($dept)];
+        $c = \App\Models\Conversation::factory()->direct()->withParticipants([$a, $b])->create();
+        $this->actingAs($a)->postJson("/api/v1/conversations/{$c->id}/messages", ['body' => 'hi'])->assertCreated();
+
+        $this->actingAs($admin)->deleteJson("/api/v1/users/{$a->id}/permanent")
+            ->assertUnprocessable()
+            ->assertJsonPath('code', 'user_has_history');
+        $this->assertDatabaseHas('users', ['id' => $a->id]);
+
+        $this->actingAs($admin)->deleteJson("/api/v1/users/{$admin->id}/permanent")->assertUnprocessable();
+        $this->actingAs($b)->deleteJson("/api/v1/users/{$b->id}/permanent")->assertForbidden();
+    }
+
     public function test_generated_passwords_are_strong_and_differ(): void
     {
         $a = \App\Http\Controllers\Api\V1\UserController::temporaryPassword();

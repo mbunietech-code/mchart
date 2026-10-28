@@ -54,6 +54,7 @@ Route::middleware(['auth:sanctum', 'active', 'password.changed'])->group(functio
         Route::post('users', [UserController::class, 'store']);
         Route::patch('users/{user}', [UserController::class, 'update']);
         Route::delete('users/{user}', [UserController::class, 'destroy']);
+        Route::delete('users/{user}/permanent', [UserController::class, 'forceDestroy']);
         Route::post('departments', [DepartmentController::class, 'store']);
         Route::patch('departments/{department}', [DepartmentController::class, 'update']);
         Route::delete('departments/{department}', [DepartmentController::class, 'destroy']);

@@ -55,6 +55,10 @@ class DirectoryRepository {
 
   Future<void> deactivateUser(int id) => _api.delete('/users/$id');
 
+  /// Only for accounts with no history; the server refuses the rest.
+  Future<void> deleteUserPermanently(int id) =>
+      _api.delete('/users/$id/permanent');
+
   Future<Department> createDepartment(Map<String, dynamic> body) async {
     final json = await _api.post<Map<String, dynamic>>(
       '/departments',

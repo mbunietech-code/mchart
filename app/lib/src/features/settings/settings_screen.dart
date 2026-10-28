@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/api_exception.dart';
 import '../../core/format.dart';
 import '../../models/enums.dart';
 import '../../models/user.dart';
@@ -473,6 +474,8 @@ class _UserRow extends ConsumerWidget {
                     {'status': user.isActive ? 'inactive' : 'active'},
                   );
                   ref.invalidate(usersProvider);
+                } else if (v == 'delete' && context.mounted) {
+                  await confirmDeleteUser(context, ref, user);
                 }
               },
               itemBuilder: (_) => [
@@ -483,6 +486,14 @@ class _UserRow extends ConsumerWidget {
                     user.isActive ? 'Deactivate account' : 'Activate account',
                   ),
                 ),
+                if (user.id != ref.read(currentUserProvider)?.id)
+                  const PopupMenuItem(
+                    value: 'delete',
+                    child: Text(
+                      'Delete permanently',
+                      style: TextStyle(color: AppColor.danger),
+                    ),
+                  ),
               ],
             ),
           ),
@@ -544,6 +555,8 @@ class _UserCard extends ConsumerWidget {
                       {'status': user.isActive ? 'inactive' : 'active'},
                     );
                     ref.invalidate(usersProvider);
+                  } else if (v == 'delete' && context.mounted) {
+                    await confirmDeleteUser(context, ref, user);
                   }
                 },
                 itemBuilder: (_) => [
@@ -554,6 +567,14 @@ class _UserCard extends ConsumerWidget {
                       user.isActive ? 'Deactivate account' : 'Activate account',
                     ),
                   ),
+                  if (user.id != ref.read(currentUserProvider)?.id)
+                    const PopupMenuItem(
+                      value: 'delete',
+                      child: Text(
+                        'Delete permanently',
+                        style: TextStyle(color: AppColor.danger),
+                      ),
+                    ),
                 ],
               ),
             ],
@@ -783,6 +804,50 @@ class _RolesTab extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+/// Confirms, then permanently deletes an unused account. The server
+/// refuses accounts with history and says why; that message is shown.
+Future<void> confirmDeleteUser(
+  BuildContext context,
+  WidgetRef ref,
+  User user,
+) async {
+  final ok = await showDialog<bool>(
+    context: context,
+    builder: (c) => AlertDialog(
+      title: Text('Delete ${user.name}?'),
+      content: Text(
+        'This permanently removes ${user.email} so the email can be invited again. '
+        'It only works for accounts that have not sent messages or worked on tasks; '
+        'for anyone else, use Deactivate instead.',
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(c, false),
+          child: const Text('Cancel'),
+        ),
+        FilledButton(
+          style: FilledButton.styleFrom(backgroundColor: AppColor.danger),
+          onPressed: () => Navigator.pop(c, true),
+          child: const Text('Delete'),
+        ),
+      ],
+    ),
+  );
+  if (ok != true || !context.mounted) return;
+  final messenger = ScaffoldMessenger.of(context);
+  try {
+    await ref.read(directoryRepositoryProvider).deleteUserPermanently(user.id);
+    ref.invalidate(usersProvider);
+    messenger.showSnackBar(SnackBar(content: Text('${user.name} deleted')));
+  } on ApiException catch (e) {
+    messenger.showSnackBar(SnackBar(content: Text(e.message)));
+  } catch (_) {
+    messenger.showSnackBar(
+      const SnackBar(content: Text('Could not delete the user. Try again.')),
     );
   }
 }
