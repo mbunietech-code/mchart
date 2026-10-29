@@ -47,3 +47,5 @@ Name: "{autodesktop}\MChart"; Filename: "{app}\mchart.exe"; Tasks: desktopicon
 
 [Run]
 Filename: "{app}\mchart.exe"; Description: "{cm:LaunchProgram,MChart}"; Flags: nowait postinstall skipifsilent
+; The in-app updater runs this setup with /SILENT: start the new version after.
+Filename: "{app}\mchart.exe"; Flags: nowait; Check: WizardSilent

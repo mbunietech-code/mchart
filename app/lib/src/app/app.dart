@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/push_service.dart';
 import '../features/auth/auth_controller.dart';
 import '../theme/app_theme.dart';
+import '../widgets/update_bar.dart';
 import 'app_router.dart';
 
 class MChartApp extends ConsumerStatefulWidget {
@@ -49,7 +50,12 @@ class _MChartAppState extends ConsumerState<MChartApp> {
       scaffoldMessengerKey: rootMessengerKey,
       builder: (context, child) => booting
           ? const Scaffold(body: Center(child: CircularProgressIndicator()))
-          : child!,
+          : Column(
+              children: [
+                const UpdateBar(),
+                Expanded(child: child!),
+              ],
+            ),
     );
   }
 }

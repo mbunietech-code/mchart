@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\V1\AnnouncementController;
+use App\Http\Controllers\Api\V1\AppVersionController;
 use App\Http\Controllers\Api\V1\Auth\AuthController;
 use App\Http\Controllers\Api\V1\Auth\PasswordResetController;
 use App\Http\Controllers\Api\V1\ConversationController;
@@ -25,6 +26,8 @@ use Illuminate\Support\Facades\Route;
 */
 
 // ----- Public -----------------------------------------------------------
+Route::get('app/version', AppVersionController::class)
+    ->middleware('throttle:30,1');
 Route::post('auth/login', [AuthController::class, 'login'])
     ->middleware('throttle:6,1');
 Route::post('auth/password/forgot', [PasswordResetController::class, 'sendResetLink'])

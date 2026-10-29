@@ -7,8 +7,10 @@ Set-Location $PSScriptRoot
 $ErrorActionPreference = 'Stop'
 
 # Same production + realtime settings as run-prod.ps1.
-$defines = (Select-String -Path .\run-prod.ps1 -Pattern '--dart-define=\S+' -AllMatches).Matches.Value
+$defines = @(Select-String -Path .\run-prod.ps1 -Pattern '--dart-define=\S+' -AllMatches).Matches.Value
 $version = ((Select-String -Path .\pubspec.yaml -Pattern '^version:\s*([0-9.]+)').Matches[0].Groups[1].Value)
+# Turns on the in-app updater (lib/src/core/app_updater.dart).
+$defines += "--dart-define=MCHART_VERSION=$version"
 
 if (-not (Test-Path .\android\key.properties)) {
     throw 'android\key.properties missing: copy it (and app\mchart-release.jks) from the release signing backup.'
