@@ -79,6 +79,13 @@ final routerProvider = Provider<GoRouter>((ref) {
             path: '/dashboard',
             pageBuilder: (c, s) =>
                 const NoTransitionPage(child: DashboardScreen()),
+            routes: [
+              GoRoute(
+                path: 'activity',
+                parentNavigatorKey: _rootKey,
+                builder: (c, s) => const ActivityHistoryScreen(),
+              ),
+            ],
           ),
           GoRoute(
             path: '/tasks',

@@ -397,9 +397,7 @@ class _ActivityFeed extends ConsumerWidget {
       trailing: const LivePill(online: true, onlineLabel: 'Live'),
       footer: Center(
         child: TextButton(
-          onPressed: () => Navigator.of(context).push(
-            MaterialPageRoute(builder: (_) => const _ActivityHistoryScreen()),
-          ),
+          onPressed: () => context.push('/dashboard/activity'),
           child: const Text(
             'View Full Activity History',
             style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
@@ -424,8 +422,9 @@ class _ActivityFeed extends ConsumerWidget {
   }
 }
 
-class _ActivityHistoryScreen extends ConsumerWidget {
-  const _ActivityHistoryScreen();
+/// Full-screen list behind "View Full Activity History" (/dashboard/activity).
+class ActivityHistoryScreen extends ConsumerWidget {
+  const ActivityHistoryScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
