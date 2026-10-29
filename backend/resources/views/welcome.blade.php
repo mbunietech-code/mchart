@@ -45,7 +45,7 @@
             grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
             gap: 20px;
             width: 100%;
-            max-width: 880px;
+            max-width: 600px;
         }
         .card {
             background: var(--card-bg);
@@ -73,7 +73,6 @@
         .btn:hover { opacity: 0.88; }
         .btn-primary { background: var(--primary); color: #fff; }
         .btn-disabled { background: var(--bg); color: var(--slate-light); border: 1px solid var(--border); cursor: not-allowed; pointer-events: none; }
-        .icon-web { background: #EFF6FF; color: var(--primary); }
         .icon-android { background: #ECFDF5; color: var(--success); }
         .icon-windows { background: #FFFBEB; color: var(--amber); }
         footer { margin-top: 56px; font-size: 12px; color: var(--slate-light); text-align: center; }
@@ -106,16 +105,6 @@
     @endphp
 
     <div class="cards">
-        <div class="card">
-            <div class="icon icon-web">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
-            </div>
-            <h2>Web App</h2>
-            <p class="desc">No install needed — open MChart straight in your browser. Works on any computer.</p>
-            <a class="btn btn-primary" href="https://cha.mbuniehub.com" target="_blank" rel="noopener">Open Web App →</a>
-            <p class="meta">cha.mbuniehub.com</p>
-        </div>
-
         <div class="card">
             <div class="icon icon-android">
                 <svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.6 9.48l1.84-3.18c.16-.31.04-.69-.26-.85-.29-.15-.65-.06-.83.22l-1.88 3.24a11.43 11.43 0 0 0-8.94 0L5.65 5.67a.637.637 0 0 0-.87-.2c-.28.16-.38.53-.22.83L6.4 9.48A10.78 10.78 0 0 0 1 18h22a10.78 10.78 0 0 0-5.4-8.52zM7 15.25a1.25 1.25 0 1 1 0-2.5 1.25 1.25 0 0 1 0 2.5zm10 0a1.25 1.25 0 1 1 0-2.5 1.25 1.25 0 0 1 0 2.5z"/></svg>
