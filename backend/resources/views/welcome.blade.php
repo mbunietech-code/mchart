@@ -32,11 +32,7 @@
             padding: 48px 20px;
         }
         .brand { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
-        .brand .mark {
-            width: 44px; height: 44px; border-radius: 12px; background: #fff;
-            border: 1px solid var(--border); display: flex; align-items: center; justify-content: center;
-            box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
-        }
+        .brand .mark { width: 48px; height: 48px; }
         .brand .name { font-size: 22px; font-weight: 700; letter-spacing: -0.02em; }
         .brand .name span { color: var(--slate); font-weight: 500; font-size: 14px; display: block; margin-top: -2px; }
         h1 { font-size: 15px; font-weight: 500; color: var(--slate); margin: 4px 0 40px; text-align: center; }
@@ -81,15 +77,7 @@
 </head>
 <body>
     <div class="brand">
-        <div class="mark">
-            <svg width="26" height="26" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
-                <g transform="translate(64, 64)">
-                    <path d="M 192 48 C 96 48 24 116 24 204 C 24 254 48 298 88 326 C 96 332 98 344 94 354 L 78 392 C 74 402 84 412 94 408 L 148 386 C 158 382 170 384 178 390 C 206 400 236 404 268 400 C 254 380 248 356 252 332 C 254 322 262 312 272 312 C 284 312 292 322 290 334 C 286 358 296 376 312 390 C 342 368 360 334 360 296 C 360 208 288 48 192 48 Z" fill="none" stroke="#1B2A6B" stroke-width="30" stroke-linecap="round" stroke-linejoin="round"/>
-                    <path d="M 112 210 L 168 266 C 174 272 184 272 190 266 L 314 128" fill="none" stroke="#1B2A6B" stroke-width="30" stroke-linecap="round" stroke-linejoin="round"/>
-                    <circle cx="314" cy="128" r="15" fill="#1B2A6B"/>
-                </g>
-            </svg>
-        </div>
+        <img class="mark" src="{{ asset('mchart-logo.png') }}" alt="MChart">
         <div class="name">MChart<span>Mbunietech Workspace</span></div>
     </div>
     <h1>Chat, tasks and notifications for the whole team — pick your platform.</h1>

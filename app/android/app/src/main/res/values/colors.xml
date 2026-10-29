@@ -2,4 +2,6 @@
 <resources>
     <!-- AppColor.brand; tints the push notification icon. -->
     <color name="mchart_brand">#1E40AF</color>
+    <!-- Launcher icon background, matches the logo artwork. -->
+    <color name="ic_launcher_background">#1D2D85</color>
 </resources>

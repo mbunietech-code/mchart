@@ -1,28 +1,19 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 
-import '../theme/app_color.dart';
-
-/// The MChart mark — a rounded white tile bordered in the design system's
-/// subtle border color, containing the navy checkmark glyph.
+/// The MChart mark — the navy rounded tile with the white chat bubble,
+/// the same artwork as the launcher icon.
 class MChartLogo extends StatelessWidget {
-  const MChartLogo({super.key, this.size = 34, this.bordered = true});
+  const MChartLogo({super.key, this.size = 34});
 
   final double size;
-  final bool bordered;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return Image.asset(
+      'assets/branding/mchart_logo.png',
       width: size,
       height: size,
-      padding: EdgeInsets.all(size * 0.08),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(size * 0.28),
-        border: bordered ? Border.all(color: AppColor.border) : null,
-      ),
-      child: SvgPicture.asset('assets/branding/mchart_mark.svg'),
+      filterQuality: FilterQuality.medium,
     );
   }
 }
