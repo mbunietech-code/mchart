@@ -23,13 +23,19 @@ class PageHeader extends StatelessWidget {
     return LayoutBuilder(
       builder: (context, c) {
         final wide = c.maxWidth > 720;
+        // Phones: just the title, so the page content gets the height.
+        final phone = c.maxWidth < 600;
         final text = Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Eyebrow(breadcrumb),
-            Gap.sm,
-            Text(title, style: Theme.of(context).textTheme.displaySmall),
-            if (subtitle != null) ...[
+            if (!phone) ...[Eyebrow(breadcrumb), Gap.sm],
+            Text(
+              title,
+              style: phone
+                  ? Theme.of(context).textTheme.headlineSmall
+                  : Theme.of(context).textTheme.displaySmall,
+            ),
+            if (subtitle != null && !phone) ...[
               Gap.xs,
               ConstrainedBox(
                 constraints: const BoxConstraints(maxWidth: 640),
@@ -58,7 +64,7 @@ class PageHeader extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             text,
-            Gap.lg,
+            phone ? Gap.md : Gap.lg,
             Wrap(spacing: 8, runSpacing: 8, children: actions),
           ],
         );
