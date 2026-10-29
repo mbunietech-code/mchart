@@ -1,11 +1,11 @@
 ; One-file Windows installer (MChart-Setup.exe), built with Inno Setup 6:
-;   ISCC.exe /DAppVersion=1.0.12 windows\installer\mchart.iss
+;   ISCC.exe /DAppVersion=1.0.13 windows\installer\mchart.iss
 ; after `flutter build windows --release`. Replaces the MSI (mchart.wxs) as
 ; what the downloads page offers; the AppId must never change between
 ; releases so new versions upgrade in place.
 
 #ifndef AppVersion
-  #define AppVersion "1.0.12"
+  #define AppVersion "1.0.13"
 #endif
 #define BuildDir "..\..\build\windows\x64\runner\Release"
 

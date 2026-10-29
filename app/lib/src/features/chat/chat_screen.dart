@@ -1353,6 +1353,7 @@ class _MessageBubble extends StatelessWidget {
         padding: const EdgeInsets.only(bottom: 8),
         child: GestureDetector(
           onLongPress: () => _openMenu(context),
+          onSecondaryTap: () => _openMenu(context),
           child: Align(
             alignment: mine ? Alignment.centerRight : Alignment.centerLeft,
             child: Container(
@@ -1405,6 +1406,8 @@ class _MessageBubble extends StatelessWidget {
           if (message.isSticker)
             GestureDetector(
               onLongPress: () => _openMenu(context),
+              // Desktop: right-click opens the same menu.
+              onSecondaryTap: () => _openMenu(context),
               child: Column(
                 crossAxisAlignment: mine
                     ? CrossAxisAlignment.end
@@ -1429,6 +1432,8 @@ class _MessageBubble extends StatelessWidget {
           else
             GestureDetector(
               onLongPress: () => _openMenu(context),
+              // Desktop: right-click opens the same menu.
+              onSecondaryTap: () => _openMenu(context),
               child: ConstrainedBox(
                 constraints: const BoxConstraints(maxWidth: 460),
                 child: Container(

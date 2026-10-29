@@ -211,11 +211,16 @@ class MessageThreadController extends StateNotifier<MessageThreadState> {
         attachmentName: attachmentName,
         attachmentDurationSeconds: attachmentDurationSeconds,
       );
+      // The realtime echo or a poll may have added this message already
+      // while the request was in flight; keep just one copy.
       state = state.copyWith(
         sending: false,
         messages: [
           for (final m in state.messages)
-            if (m.id == optimistic.id) saved else m,
+            if (m.id == optimistic.id)
+              saved
+            else if (m.id != saved.id)
+              m,
         ],
       );
     } catch (e) {
