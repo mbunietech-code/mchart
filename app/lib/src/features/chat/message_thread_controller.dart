@@ -8,6 +8,7 @@ import '../../core/providers.dart';
 import '../../models/enums.dart';
 import '../../models/message.dart';
 import '../auth/auth_controller.dart';
+import '../notifications/notifications_controller.dart';
 import 'chat_repository.dart';
 
 class MessageThreadState {
@@ -65,11 +66,23 @@ class MessageThreadController extends StateNotifier<MessageThreadState> {
 
   ChatRepository get _repo => _ref.read(chatRepositoryProvider);
 
+  /// Marks the chat read, then refreshes the chat list's unread badge and
+  /// the bell (the server clears this chat's message notifications too).
+  Future<void> _markRead() async {
+    try {
+      await _repo.markRead(conversationId);
+    } catch (_) {
+      return;
+    }
+    _ref.invalidate(conversationsProvider);
+    unawaited(_ref.read(notificationsControllerProvider.notifier).refresh());
+  }
+
   Future<void> _load() async {
     try {
       final messages = await _repo.messages(conversationId);
       state = state.copyWith(messages: messages, loading: false, error: null);
-      unawaited(_repo.markRead(conversationId));
+      unawaited(_markRead());
     } catch (e) {
       state = state.copyWith(loading: false, error: e.toString());
     }
@@ -87,7 +100,7 @@ class MessageThreadController extends StateNotifier<MessageThreadState> {
       state = state.copyWith(
         messages: [...fresh, ...state.messages.where((m) => m.pending)],
       );
-      if (hadNew) unawaited(_repo.markRead(conversationId));
+      if (hadNew) unawaited(_markRead());
     } catch (_) {
       // Transient network failure: the next tick retries.
     } finally {
@@ -114,7 +127,7 @@ class MessageThreadController extends StateNotifier<MessageThreadState> {
       final incoming = Message.fromJson(data);
       if (state.messages.any((m) => m.id == incoming.id)) return;
       state = state.copyWith(messages: [...state.messages, incoming]);
-      unawaited(_repo.markRead(conversationId));
+      unawaited(_markRead());
       // A message arriving means that sender is done typing.
       _clearTyping(incoming.senderId);
     });

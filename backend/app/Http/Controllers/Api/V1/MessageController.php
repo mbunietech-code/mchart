@@ -150,6 +150,13 @@ class MessageController extends Controller
                 $message->update(['read_by' => [...($message->read_by ?? []), $userId]]);
             });
 
+        // Reading the chat also clears its "new message" notifications.
+        $request->user()->notifications()
+            ->where('type', 'new_message')
+            ->where('is_read', false)
+            ->where('data->conversation_id', $conversation->id)
+            ->update(['is_read' => true, 'read_at' => now()]);
+
         return response()->json(['message' => 'Marked as read.']);
     }
 
