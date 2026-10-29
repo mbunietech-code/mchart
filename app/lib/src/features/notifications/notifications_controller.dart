@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/api_client.dart';
+import '../../core/desktop_notifier.dart';
 import '../../core/env.dart';
 import '../../core/providers.dart';
 import '../../models/app_notification.dart';
@@ -49,6 +50,12 @@ class NotificationsController extends StateNotifier<NotificationsState> {
           .map((e) => AppNotification.fromJson(e as Map<String, dynamic>))
           .toList();
       final known = state.items.map((n) => n.id).toSet();
+      // Polling (no realtime): toast what arrived since the last load.
+      if (!state.loading) {
+        for (final n in items) {
+          if (!n.isRead && !known.contains(n.id)) DesktopNotifier.show(n);
+        }
+      }
       final newAnnouncement =
           !state.loading &&
           items.any((n) => n.type == 'announcement' && !known.contains(n.id));
@@ -70,6 +77,7 @@ class NotificationsController extends StateNotifier<NotificationsState> {
       final n = AppNotification.fromJson(data);
       if (state.items.any((e) => e.id == n.id)) return;
       state = state.copyWith(items: [n, ...state.items]);
+      DesktopNotifier.show(n);
       if (n.type == 'announcement') {
         _ref.invalidate(announcementUnreadProvider);
         _ref.invalidate(announcementsProvider);
