@@ -3,7 +3,7 @@
 return [
     // Shown on the public downloads page next to the APK/MSI links. Bump
     // this (and the pubspec.yaml version in app/) together on each release.
-    'app_version' => env('MCHART_APP_VERSION', '1.0.10'),
+    'app_version' => env('MCHART_APP_VERSION', '1.0.11'),
 
     // Where invitation emails send people to install the app: the public
     // downloads page (resources/views/welcome.blade.php) by default.
