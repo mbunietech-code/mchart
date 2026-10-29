@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Services\HubTaskSync;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -9,6 +10,11 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 #[Fillable(['task_id', 'user_id', 'comment', 'is_revision_note'])]
 class TaskComment extends Model
 {
+    protected static function booted(): void
+    {
+        static::created(fn (TaskComment $comment) => app(HubTaskSync::class)->pushComment($comment));
+    }
+
     protected function casts(): array
     {
         return [

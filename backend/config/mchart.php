@@ -11,4 +11,10 @@ return [
 
     // Optional browser version of the app; omitted from emails when empty.
     'web_url' => env('MCHART_WEB_URL'),
+
+    // Two-way task sync with mbuniehub.com/admin/tasks (its admin_tasks
+    // table, read over the 'hub' DB connection). Off until HUB_DB_DATABASE
+    // is set. People are matched by email.
+    'hub_sync' => (bool) env('HUB_DB_DATABASE'),
+    'hub_timezone' => env('HUB_TIMEZONE', 'Africa/Dar_es_Salaam'),
 ];

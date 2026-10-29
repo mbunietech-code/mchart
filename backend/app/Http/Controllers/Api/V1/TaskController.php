@@ -9,6 +9,7 @@ use App\Http\Requests\StoreTaskRequest;
 use App\Http\Requests\UpdateTaskRequest;
 use App\Http\Resources\TaskResource;
 use App\Models\Task;
+use App\Services\HubTaskSync;
 use App\Services\NotificationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -23,6 +24,7 @@ class TaskController extends Controller
     public function index(Request $request): AnonymousResourceCollection
     {
         $this->authorize('viewAny', Task::class);
+        app(HubTaskSync::class)->pullThrottled();
 
         $query = Task::query()
             ->visibleTo($request->user())
@@ -97,8 +99,9 @@ class TaskController extends Controller
     public function show(Task $task): TaskResource
     {
         $this->authorize('view', $task);
+        app(HubTaskSync::class)->pullThrottled();
 
-        return new TaskResource($task->load([
+        return new TaskResource($task->refresh()->load([
             'creator', 'assignee', 'department',
             'attachments.uploader', 'comments.user', 'statusHistory.changedBy',
         ]));

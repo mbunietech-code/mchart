@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\TaskPriority;
 use App\Enums\TaskStatus;
+use App\Services\HubTaskSync;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -29,6 +30,13 @@ class Task extends Model
     }
 
     protected $appends = ['is_overdue'];
+
+    protected static function booted(): void
+    {
+        // Mirror every change to mbuniehub.com/admin/tasks.
+        static::saved(fn (Task $task) => app(HubTaskSync::class)->pushTask($task));
+        static::deleted(fn (Task $task) => app(HubTaskSync::class)->pushDelete($task));
+    }
 
     // ----- Relationships ---------------------------------------------------
 
