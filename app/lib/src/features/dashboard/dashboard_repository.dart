@@ -42,3 +42,10 @@ final dashboardSummaryProvider = FutureProvider<DashboardSummary>((ref) {
 final dashboardActivityProvider = FutureProvider<List<ActivityEvent>>((ref) {
   return ref.watch(dashboardRepositoryProvider).activity();
 });
+
+/// "View Full Activity History": the last 200 events.
+final fullActivityProvider = FutureProvider.autoDispose<List<ActivityEvent>>((
+  ref,
+) {
+  return ref.watch(dashboardRepositoryProvider).activity(limit: 200);
+});

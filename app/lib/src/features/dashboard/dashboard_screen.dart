@@ -396,12 +396,13 @@ class _ActivityFeed extends ConsumerWidget {
           'What\'s happening across projects and communication right now.',
       trailing: const LivePill(online: true, onlineLabel: 'Live'),
       footer: Center(
-        child: Text(
-          'View Full Activity History',
-          style: TextStyle(
-            fontSize: 12,
-            fontWeight: FontWeight.w600,
-            color: AppColor.brand,
+        child: TextButton(
+          onPressed: () => Navigator.of(context).push(
+            MaterialPageRoute(builder: (_) => const _ActivityHistoryScreen()),
+          ),
+          child: const Text(
+            'View Full Activity History',
+            style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
           ),
         ),
       ),
@@ -417,6 +418,41 @@ class _ActivityFeed extends ConsumerWidget {
                 children: [
                   for (final e in events.take(6)) _ActivityRow(event: e),
                 ],
+              ),
+      ),
+    );
+  }
+}
+
+class _ActivityHistoryScreen extends ConsumerWidget {
+  const _ActivityHistoryScreen();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final activity = ref.watch(fullActivityProvider);
+    return Scaffold(
+      backgroundColor: AppColor.canvas,
+      appBar: AppBar(title: const Text('Activity history')),
+      body: activity.when(
+        loading: () => const LoadingBlock(height: 320),
+        error: (e, _) => ErrorBlock(
+          message: '$e',
+          onRetry: () => ref.invalidate(fullActivityProvider),
+        ),
+        data: (events) => events.isEmpty
+            ? const EmptyState(
+                icon: Icons.history_rounded,
+                title: 'No activity yet',
+              )
+            : RefreshIndicator(
+                onRefresh: () async => ref.invalidate(fullActivityProvider),
+                child: ListView.separated(
+                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+                  itemCount: events.length,
+                  separatorBuilder: (context, index) =>
+                      const Divider(height: 1),
+                  itemBuilder: (context, i) => _ActivityRow(event: events[i]),
+                ),
               ),
       ),
     );
