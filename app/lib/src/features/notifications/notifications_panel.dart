@@ -17,7 +17,14 @@ Future<void> showNotificationsPanel(
     context: context,
     barrierColor: Colors.transparent,
     builder: (_) => Stack(
-      children: [Positioned(right: 20, top: anchor.dy, child: const _Panel())],
+      children: [
+        // Phones: nearly full width, never wider than the screen.
+        Positioned(
+          right: MediaQuery.sizeOf(context).width < 600 ? 12 : 20,
+          top: anchor.dy,
+          child: const _Panel(),
+        ),
+      ],
     ),
   );
 }
@@ -43,8 +50,10 @@ class _Panel extends ConsumerWidget {
     return Material(
       color: Colors.transparent,
       child: Container(
-        width: 380,
-        constraints: const BoxConstraints(maxHeight: 560),
+        width: (MediaQuery.sizeOf(context).width - 24).clamp(0, 380).toDouble(),
+        constraints: BoxConstraints(
+          maxHeight: (MediaQuery.sizeOf(context).height - 120).clamp(0, 560).toDouble(),
+        ),
         decoration: BoxDecoration(
           color: AppColor.surface,
           borderRadius: AppRadius.lg,

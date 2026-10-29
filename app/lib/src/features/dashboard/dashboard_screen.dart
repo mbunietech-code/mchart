@@ -180,7 +180,7 @@ class _Body extends ConsumerWidget {
                 children: [
                   left,
                   Gap.lg,
-                  SizedBox(height: 420, child: right),
+                  right,
                 ],
               );
             }
