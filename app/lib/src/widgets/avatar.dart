@@ -32,6 +32,14 @@ class AppAvatar extends StatelessWidget {
   Widget build(BuildContext context) {
     final bg = (color ?? AppColor.brand).withValues(alpha: 0.14);
     final fg = color ?? AppColor.brand;
+    final initials = Text(
+      label,
+      style: TextStyle(
+        fontSize: size * 0.36,
+        fontWeight: FontWeight.w700,
+        color: fg,
+      ),
+    );
 
     Widget avatar = Container(
       width: size,
@@ -49,16 +57,16 @@ class AppAvatar extends StatelessWidget {
                 width: size,
                 height: size,
                 fit: BoxFit.cover,
+                // Decode at display size, not the full upload.
+                cacheWidth:
+                    (size * MediaQuery.devicePixelRatioOf(context)).round(),
+                // Initials until the photo arrives, or if it can't load.
+                frameBuilder: (context, child, frame, sync) =>
+                    frame == null && !sync ? initials : child,
+                errorBuilder: (context, error, stack) => initials,
               ),
             )
-          : Text(
-              label,
-              style: TextStyle(
-                fontSize: size * 0.36,
-                fontWeight: FontWeight.w700,
-                color: fg,
-              ),
-            ),
+          : initials,
     );
 
     if (online == null) return avatar;

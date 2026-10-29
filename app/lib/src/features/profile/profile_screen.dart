@@ -10,6 +10,7 @@ import '../../theme/app_color.dart';
 import '../../theme/app_spacing.dart';
 import '../../widgets/avatar.dart';
 import '../auth/auth_controller.dart';
+import 'avatar_crop_screen.dart';
 
 /// The signed-in user's own photo, name, phone and password.
 class ProfileScreen extends ConsumerStatefulWidget {
@@ -63,13 +64,96 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     }
   }
 
-  Future<void> _pickPhoto() async {
+  /// Photo options sheet: take / choose a new one, view or remove it.
+  Future<void> _photoOptions(User user) async {
+    final mobile =
+        Theme.of(context).platform == TargetPlatform.android ||
+        Theme.of(context).platform == TargetPlatform.iOS;
+    final choice = await showModalBottomSheet<String>(
+      context: context,
+      showDragHandle: true,
+      builder: (context) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (mobile)
+              ListTile(
+                leading: const Icon(Icons.photo_camera_rounded),
+                title: const Text('Take photo'),
+                onTap: () => Navigator.pop(context, 'camera'),
+              ),
+            ListTile(
+              leading: const Icon(Icons.photo_library_rounded),
+              title: Text(mobile ? 'Choose from gallery' : 'Choose a picture'),
+              onTap: () => Navigator.pop(context, 'gallery'),
+            ),
+            if (user.avatarUrl != null) ...[
+              ListTile(
+                leading: const Icon(Icons.visibility_rounded),
+                title: const Text('View photo'),
+                onTap: () => Navigator.pop(context, 'view'),
+              ),
+              ListTile(
+                leading: const Icon(
+                  Icons.delete_outline_rounded,
+                  color: AppColor.danger,
+                ),
+                title: const Text(
+                  'Remove photo',
+                  style: TextStyle(color: AppColor.danger),
+                ),
+                onTap: () => Navigator.pop(context, 'remove'),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+    switch (choice) {
+      case 'camera':
+        return _pickPhoto(ImageSource.camera);
+      case 'gallery':
+        return _pickPhoto(ImageSource.gallery);
+      case 'view':
+        return _viewPhoto(user);
+      case 'remove':
+        return _removePhoto();
+    }
+  }
+
+  void _viewPhoto(User user) => Navigator.of(context).push(
+    MaterialPageRoute(
+      fullscreenDialog: true,
+      builder: (_) => Scaffold(
+        backgroundColor: Colors.black,
+        appBar: AppBar(
+          backgroundColor: Colors.black,
+          foregroundColor: Colors.white,
+          title: Text(user.name),
+        ),
+        body: Center(
+          child: InteractiveViewer(
+            maxScale: 4,
+            child: Image.network(user.avatarUrl!, fit: BoxFit.contain),
+          ),
+        ),
+      ),
+    ),
+  );
+
+  Future<void> _pickPhoto(ImageSource source) async {
     final x = await ImagePicker().pickImage(
-      source: ImageSource.gallery,
-      imageQuality: 85,
-      maxWidth: 800,
+      source: source,
+      imageQuality: 92,
+      maxWidth: 1600,
+      maxHeight: 1600,
+      preferredCameraDevice: CameraDevice.front,
     );
     if (x == null) return;
+    final bytes = await x.readAsBytes();
+    if (!mounted) return;
+    final cropped = await AvatarCropScreen.open(context, bytes);
+    if (cropped == null || !mounted) return;
     setState(() => _uploading = true);
     try {
       _apply(
@@ -78,13 +162,14 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             .post<Map<String, dynamic>>(
               '/me/avatar',
               data: FormData.fromMap({
-                'avatar': await MultipartFile.fromFile(
-                  x.path,
-                  filename: x.name,
+                'avatar': MultipartFile.fromBytes(
+                  cropped,
+                  filename: 'avatar.png',
                 ),
               }),
             ),
       );
+      _toast('Profile photo updated');
     } on ApiException catch (e) {
       _toast(e.message);
     } finally {
@@ -125,30 +210,39 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 Text('My profile', style: t.headlineSmall),
                 Gap.xl,
                 Center(
-                  child: Stack(
-                    children: [
-                      AppAvatar.forUser(user, size: 104),
-                      if (_uploading)
-                        const Positioned.fill(
-                          child: Center(child: CircularProgressIndicator()),
+                  child: GestureDetector(
+                    onTap: _uploading ? null : () => _photoOptions(user),
+                    child: Stack(
+                      children: [
+                        AppAvatar.forUser(user, size: 128),
+                        if (_uploading)
+                          const Positioned.fill(
+                            child: Center(child: CircularProgressIndicator()),
+                          ),
+                        Positioned(
+                          right: 0,
+                          bottom: 0,
+                          child: IconButton.filled(
+                            tooltip: 'Change photo',
+                            onPressed: _uploading
+                                ? null
+                                : () => _photoOptions(user),
+                            icon: const Icon(Icons.photo_camera_rounded),
+                          ),
                         ),
-                      Positioned(
-                        right: 0,
-                        bottom: 0,
-                        child: IconButton.filled(
-                          tooltip: 'Change photo',
-                          onPressed: _uploading ? null : _pickPhoto,
-                          icon: const Icon(Icons.photo_camera_rounded),
-                        ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
-                if (user.avatarUrl != null)
-                  TextButton(
-                    onPressed: _uploading ? null : _removePhoto,
-                    child: const Text('Remove photo'),
+                Gap.sm,
+                Center(
+                  child: TextButton(
+                    onPressed: _uploading ? null : () => _photoOptions(user),
+                    child: Text(
+                      user.avatarUrl == null ? 'Add photo' : 'Change photo',
+                    ),
                   ),
+                ),
                 Gap.lg,
                 TextField(
                   controller: _name,
