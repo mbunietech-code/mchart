@@ -5,6 +5,9 @@ return [
     // this (and the pubspec.yaml version in app/) together on each release.
     'app_version' => env('MCHART_APP_VERSION', '1.0.14'),
 
+    // Contact address shown on the public /privacy page.
+    'privacy_email' => env('PRIVACY_EMAIL'),
+
     // Where invitation emails send people to install the app: the public
     // downloads page (resources/views/welcome.blade.php) by default.
     'download_url' => env('MCHART_DOWNLOAD_URL', rtrim((string) env('APP_URL'), '/').'/'),

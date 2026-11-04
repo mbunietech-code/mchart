@@ -6,6 +6,7 @@ use Illuminate\Support\Facades\Route;
 
 // API-only backend. Keep this closure-free so `route:cache` works.
 Route::view('/', 'welcome');
+Route::view('privacy', 'privacy');
 
 // "Forgot password" email lands here (web form; no app needed).
 Route::get('reset-password', [ResetPasswordPageController::class, 'show'])->name('password.reset');

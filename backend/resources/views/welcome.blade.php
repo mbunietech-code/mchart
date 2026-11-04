@@ -123,7 +123,7 @@
     </div>
 
     <footer>
-        &copy; {{ date('Y') }} Mbunietech Technologies Limited. All rights reserved.
+        &copy; {{ date('Y') }} Mbunietech Technologies Limited. All rights reserved. · <a href="{{ url('privacy') }}">Privacy Policy</a>
     </footer>
 </body>
 </html>

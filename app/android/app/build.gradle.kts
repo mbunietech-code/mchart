@@ -49,6 +49,13 @@ android {
         }
     }
 
+    // Google Play builds (`--android-project-arg=play=true`) drop the
+    // install-packages permission: Play updates the app itself, and its policy
+    // forbids self-updating. The website APK keeps it for the in-app updater.
+    if (project.hasProperty("play")) {
+        sourceSets.getByName("release").manifest.srcFile("src/play/AndroidManifest.xml")
+    }
+
     buildTypes {
         release {
             // Falls back to debug signing when key.properties isn't present

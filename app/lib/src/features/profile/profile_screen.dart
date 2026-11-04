@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:dio/dio.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/api_exception.dart';
 import '../../core/providers.dart';
@@ -283,6 +284,16 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   ),
                 ),
                 _PinTile(),
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: const Icon(Icons.privacy_tip_outlined),
+                  title: const Text('Privacy policy'),
+                  trailing: const Icon(Icons.open_in_new_rounded, size: 18),
+                  onTap: () => launchUrl(
+                    Uri.parse('https://chart.mbunie.tech/privacy'),
+                    mode: LaunchMode.externalApplication,
+                  ),
+                ),
                 ListTile(
                   contentPadding: EdgeInsets.zero,
                   leading: const Icon(
