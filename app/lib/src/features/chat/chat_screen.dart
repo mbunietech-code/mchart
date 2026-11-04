@@ -18,6 +18,7 @@ import '../../models/message.dart';
 import '../../theme/app_color.dart';
 import '../../theme/app_spacing.dart';
 import '../../widgets/avatar.dart';
+import '../../widgets/linked_text.dart';
 import '../../widgets/pills.dart';
 import '../../widgets/primitives.dart';
 import '../auth/auth_controller.dart';
@@ -367,6 +368,8 @@ class _ConversationRow extends StatelessWidget {
     return InkWell(
       onTap: onTap,
       onLongPress: onLongPress,
+      // Desktop: right-click opens the same options.
+      onSecondaryTap: onLongPress,
       child: Container(
         color: selected ? AppColor.brandSoft : null,
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
@@ -1026,13 +1029,62 @@ Future<void> showChatOptions(
             title: Text(c.archived ? 'Unarchive chat' : 'Archive chat'),
             onTap: () => Navigator.pop(sheet, 'archive'),
           ),
+          ListTile(
+            leading: const Icon(
+              Icons.delete_outline_rounded,
+              color: AppColor.danger,
+            ),
+            title: const Text(
+              'Delete chat',
+              style: TextStyle(color: AppColor.danger),
+            ),
+            onTap: () => Navigator.pop(sheet, 'delete'),
+          ),
         ],
       ),
     ),
   );
-  if (choice == null) return;
+  if (choice == null || !context.mounted) return;
   final repo = ref.read(chatRepositoryProvider);
   final messenger = ScaffoldMessenger.of(context);
+  if (choice == 'delete') {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (d) => AlertDialog(
+        title: const Text('Delete this chat?'),
+        content: const Text(
+          'Its messages are removed for you only. The chat comes back if '
+          'someone sends a new message.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(d, false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(backgroundColor: AppColor.danger),
+            onPressed: () => Navigator.pop(d, true),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+    if (ok != true || !context.mounted) return;
+    final router = GoRouter.of(context);
+    try {
+      await repo.deleteChat(c.id);
+      ref.invalidate(conversationsProvider);
+      ref.invalidate(messageThreadProvider(c.id));
+      if (router.routerDelegate.currentConfiguration.uri.queryParameters['c'] ==
+          '${c.id}') {
+        router.go('/chats');
+      }
+      messenger.showSnackBar(const SnackBar(content: Text('Chat deleted')));
+    } catch (e) {
+      messenger.showSnackBar(SnackBar(content: Text('$e')));
+    }
+    return;
+  }
   try {
     switch (choice) {
       case 'pin':
@@ -1466,8 +1518,9 @@ class _MessageBubble extends StatelessWidget {
                         const SizedBox(height: 6),
                       ],
                       if (message.body != null && message.body!.isNotEmpty)
-                        Text(
+                        LinkedText(
                           message.body!,
+                          linkColor: mine ? Colors.white : AppColor.brand,
                           style: TextStyle(
                             color: fg,
                             fontSize: 13.5,

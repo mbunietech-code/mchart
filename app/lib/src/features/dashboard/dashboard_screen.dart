@@ -37,7 +37,7 @@ class DashboardScreen extends ConsumerWidget {
                   breadcrumb: 'Mbunietech • Operations',
                   title: 'Manager Dashboard — Performance & Delivery',
                   subtitle:
-                      'An overview of task status, team throughput, and activity across the MChart workspace.',
+                      'An overview of task status, team throughput, and activity across the MChat workspace.',
                   actions: [
                     const _DepartmentFilter(),
                     OutlinedButton.icon(
@@ -176,13 +176,7 @@ class _Body extends ConsumerWidget {
             final left = _CompletionByAssignee(summary: summary);
             final right = const _ActivityFeed();
             if (!twoCol) {
-              return Column(
-                children: [
-                  left,
-                  Gap.lg,
-                  right,
-                ],
-              );
+              return Column(children: [left, Gap.lg, right]);
             }
             return IntrinsicHeight(
               child: Row(
@@ -240,7 +234,7 @@ class _CompletionByAssignee extends StatelessWidget {
         children: [
           const Expanded(
             child: Text(
-              'Tracked automatically by the MChart system.',
+              'Tracked automatically by the MChat system.',
               style: TextStyle(fontSize: 11, color: AppColor.textMuted),
             ),
           ),

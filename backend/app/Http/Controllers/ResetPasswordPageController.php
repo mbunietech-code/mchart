@@ -10,7 +10,7 @@ use Illuminate\View\View;
 
 /**
  * The page the "Reset password" email links to: a plain web form, so it
- * works from any phone's mail app without the MChart app installed.
+ * works from any phone's mail app without the MChat app installed.
  */
 class ResetPasswordPageController extends Controller
 {

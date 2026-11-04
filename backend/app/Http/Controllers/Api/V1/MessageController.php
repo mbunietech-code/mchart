@@ -35,6 +35,8 @@ class MessageController extends Controller
 
         $messages = $conversation->messages()
             ->whereNotIn('id', DB::table('hidden_messages')->where('user_id', $request->user()->id)->select('message_id'))
+            // Nothing from before this user deleted the chat.
+            ->when($this->clearedAt($request, $conversation), fn ($q, $at) => $q->where('created_at', '>', $at))
             ->with(['sender', 'attachments', 'replyTo.sender', 'reactions'])
             ->latest('id')
             ->when($request->filled('before'), fn ($q) => $q->where('id', '<', $request->integer('before')))
@@ -47,6 +49,11 @@ class MessageController extends Controller
             ->values();
 
         return MessageResource::collection($messages);
+    }
+
+    private function clearedAt(Request $request, Conversation $conversation): ?string
+    {
+        return $conversation->participants()->where('user_id', $request->user()->id)->value('cleared_at');
     }
 
     public function store(StoreMessageRequest $request, Conversation $conversation): JsonResponse

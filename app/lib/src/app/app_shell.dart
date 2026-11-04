@@ -157,7 +157,7 @@ class _MobileShell extends ConsumerWidget {
             const MChartLogo(size: 28),
             Gap.sm,
             Text(
-              'MChart',
+              'MChat',
               style: Theme.of(
                 context,
               ).textTheme.titleMedium?.copyWith(fontSize: 15),
@@ -266,7 +266,7 @@ class _Sidebar extends ConsumerWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'MChart',
+                      'MChat',
                       style: Theme.of(
                         context,
                       ).textTheme.titleMedium?.copyWith(fontSize: 15),

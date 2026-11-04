@@ -25,7 +25,7 @@ class ManageAdmin extends Command
         {--password= : Password; prompted for if omitted}
         {--role=admin : admin|manager|staff}';
 
-    protected $description = 'Create or update an MChart user (defaults to the admin role)';
+    protected $description = 'Create or update an MChat user (defaults to the admin role)';
 
     public function handle(): int
     {

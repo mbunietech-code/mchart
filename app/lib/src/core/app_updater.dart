@@ -84,6 +84,10 @@ class AppUpdater extends StateNotifier<UpdateState> {
       state = UpdateAvailable(
         Release(version, file['url'] as String, file['sha256'] as String),
       );
+      // Fetch and install straight away: Windows restarts into the new
+      // version on its own, Android shows its installer. The bar's Update
+      // button retries if this attempt fails.
+      unawaited(install());
     } catch (e) {
       debugPrint('Update check failed: $e');
     }
@@ -138,7 +142,7 @@ class AppUpdater extends StateNotifier<UpdateState> {
         release,
         error: started == true
             ? null
-            : 'Allow MChart to install apps, then tap Update again.',
+            : 'Allow MChat to install apps, then tap Update again.',
       );
     } catch (e) {
       if (mounted) {

@@ -14,8 +14,8 @@ class UpdateBar extends ConsumerWidget {
     final scheme = Theme.of(context).colorScheme;
     final progress = state.progress;
     final text = progress != null
-        ? 'Downloading MChart ${state.release.version}… ${(progress * 100).round()}%'
-        : state.error ?? 'MChart ${state.release.version} is available.';
+        ? 'Downloading MChat ${state.release.version}… ${(progress * 100).round()}%'
+        : state.error ?? 'MChat ${state.release.version} is available.';
 
     return Material(
       color: scheme.primary,

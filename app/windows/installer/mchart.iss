@@ -11,13 +11,13 @@
 
 [Setup]
 AppId={{5E0C3B8A-6B1E-4F0B-9D7C-4D2B8C1A9E77}
-AppName=MChart
+AppName=MChat
 AppVersion={#AppVersion}
-AppVerName=MChart {#AppVersion}
+AppVerName=MChat {#AppVersion}
 AppPublisher=Mbunietech Technologies Limited
 AppPublisherURL=https://chart.mbunie.tech
 DefaultDirName={autopf}\MChart
-DefaultGroupName=MChart
+DefaultGroupName=MChat
 DisableProgramGroupPage=yes
 ; Installs for the current user without admin rights; admins may choose all users.
 PrivilegesRequired=lowest
@@ -40,12 +40,19 @@ Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{
 [Files]
 Source: "{#BuildDir}\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 
+[InstallDelete]
+; Shortcuts from before the MChart -> MChat rename.
+Type: files; Name: "{group}\MChart.lnk"
+Type: files; Name: "{group}\Uninstall MChart.lnk"
+Type: files; Name: "{autodesktop}\MChart.lnk"
+Type: files; Name: "{autoprograms}\MChart.lnk"
+
 [Icons]
-Name: "{group}\MChart"; Filename: "{app}\mchart.exe"
-Name: "{group}\Uninstall MChart"; Filename: "{uninstallexe}"
-Name: "{autodesktop}\MChart"; Filename: "{app}\mchart.exe"; Tasks: desktopicon
+Name: "{group}\MChat"; Filename: "{app}\mchart.exe"
+Name: "{group}\Uninstall MChat"; Filename: "{uninstallexe}"
+Name: "{autodesktop}\MChat"; Filename: "{app}\mchart.exe"; Tasks: desktopicon
 
 [Run]
-Filename: "{app}\mchart.exe"; Description: "{cm:LaunchProgram,MChart}"; Flags: nowait postinstall skipifsilent
+Filename: "{app}\mchart.exe"; Description: "{cm:LaunchProgram,MChat}"; Flags: nowait postinstall skipifsilent
 ; The in-app updater runs this setup with /SILENT: start the new version after.
 Filename: "{app}\mchart.exe"; Flags: nowait; Check: WizardSilent

@@ -3,8 +3,8 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>MChart — Mbunietech Workspace</title>
-    <meta name="description" content="Download MChart for Windows and Android, or open the web app.">
+    <title>MChat — Mbunietech Workspace</title>
+    <meta name="description" content="Download MChat for Windows and Android, or open the web app.">
     <link rel="icon" type="image/png" href="{{ asset('favicon.png') }}">
 
     <style>
@@ -77,8 +77,8 @@
 </head>
 <body>
     <div class="brand">
-        <img class="mark" src="{{ asset('mchart-logo.png') }}" alt="MChart">
-        <div class="name">MChart<span>Mbunietech Workspace</span></div>
+        <img class="mark" src="{{ asset('mchart-logo.png') }}" alt="MChat">
+        <div class="name">MChat<span>Mbunietech Workspace</span></div>
     </div>
     <h1>Chat, tasks and notifications for the whole team — pick your platform.</h1>
 
@@ -112,7 +112,7 @@
                 <svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 5.5L10.5 4.4V11.4H3V5.5M11.5 4.3L21 3V11.3H11.5V4.3M3 12.4H10.5V19.5L3 18.4V12.4M11.5 12.4H21V20.9L11.5 19.6V12.4Z"/></svg>
             </div>
             <h2>Windows</h2>
-            <p class="desc">Run the installer and choose where MChart gets installed on your PC.</p>
+            <p class="desc">Run the installer and choose where MChat gets installed on your PC.</p>
             @if ($msiExists)
                 <a class="btn btn-primary" href="{{ asset('downloads/'.$winFile) }}">Download Installer ↓</a>
                 <p class="meta">{{ $fmtSize(filesize($msiPath)) }} · v{{ config('mchart.app_version', '1.0.0') }}</p>

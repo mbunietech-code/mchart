@@ -26,7 +26,7 @@ class UserInvitation extends Mailable
 
     public function envelope(): Envelope
     {
-        return new Envelope(subject: 'You have been invited to MChart');
+        return new Envelope(subject: 'You have been invited to MChat');
     }
 
     public function content(): Content

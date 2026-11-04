@@ -10,6 +10,8 @@ import '../../theme/app_color.dart';
 import '../../theme/app_spacing.dart';
 import '../../widgets/avatar.dart';
 import '../auth/auth_controller.dart';
+import '../lock/app_lock.dart';
+import '../lock/pin_pad.dart';
 import 'avatar_crop_screen.dart';
 
 /// The signed-in user's own photo, name, phone and password.
@@ -280,6 +282,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                     builder: (_) => const _ChangePasswordDialog(),
                   ),
                 ),
+                _PinTile(),
                 ListTile(
                   contentPadding: EdgeInsets.zero,
                   leading: const Icon(
@@ -399,6 +402,48 @@ class _ChangePasswordDialogState extends ConsumerState<_ChangePasswordDialog> {
           child: const Text('Change'),
         ),
       ],
+    );
+  }
+}
+
+/// App lock: asks for the PIN whenever MChat opens or returns after a while.
+class _PinTile extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final hasPin = ref.watch(appLockProvider).hasPin;
+    void done(String msg) => ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(msg)));
+    return ListTile(
+      contentPadding: EdgeInsets.zero,
+      leading: const Icon(Icons.pin_outlined),
+      title: Text(hasPin ? 'App PIN is on' : 'Set app PIN'),
+      subtitle: const Text('Ask for a PIN when MChat opens'),
+      trailing: hasPin
+          ? PopupMenuButton<String>(
+              onSelected: (v) async {
+                if (v == 'change') {
+                  if (await showSetPinDialog(context, ref) == true) {
+                    done('PIN changed');
+                  }
+                } else {
+                  await ref.read(appLockProvider.notifier).clearPin();
+                  done('PIN removed');
+                }
+              },
+              itemBuilder: (_) => const [
+                PopupMenuItem(value: 'change', child: Text('Change PIN')),
+                PopupMenuItem(value: 'remove', child: Text('Remove PIN')),
+              ],
+            )
+          : const Icon(Icons.chevron_right_rounded),
+      onTap: hasPin
+          ? null
+          : () async {
+              if (await showSetPinDialog(context, ref) == true) {
+                done('PIN set');
+              }
+            },
     );
   }
 }

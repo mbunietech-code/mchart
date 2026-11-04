@@ -23,7 +23,7 @@ class ApiException implements Exception {
     if (e.type == DioExceptionType.connectionError ||
         e.type == DioExceptionType.connectionTimeout) {
       return ApiException(
-        'Cannot reach the MChart server. Check your connection.',
+        'Cannot reach the MChat server. Check your connection.',
         statusCode: null,
       );
     }

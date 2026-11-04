@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'app_color.dart';
 
-/// MChart type scale. The design calls for Inter; when an `Inter` asset is
+/// MChat type scale. The design calls for Inter; when an `Inter` asset is
 /// bundled (see pubspec `fonts:`) it is used, otherwise the platform sans-serif
 /// stack renders (Segoe UI / SF Pro / Roboto) which is visually close.
 abstract final class AppType {

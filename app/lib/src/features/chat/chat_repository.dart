@@ -121,6 +121,10 @@ class ChatRepository {
     return Message.fromJson(json['data'] as Map<String, dynamic>);
   }
 
+  /// Clears the chat from this user's list and history (others keep it).
+  Future<void> deleteChat(int conversationId) =>
+      _api.delete('/conversations/$conversationId');
+
   Future<void> markRead(int conversationId) =>
       _api.post('/conversations/$conversationId/read');
 

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-/// MChart brand palette — sourced from the Mbunietech design system
+/// MChat brand palette — sourced from the Mbunietech design system
 /// (DESIGN.md). Do not invent new brand colors; extend semantic tokens here
 /// only when the design system defines them.
 abstract final class AppColor {

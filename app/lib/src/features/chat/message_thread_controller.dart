@@ -217,10 +217,7 @@ class MessageThreadController extends StateNotifier<MessageThreadState> {
         sending: false,
         messages: [
           for (final m in state.messages)
-            if (m.id == optimistic.id)
-              saved
-            else if (m.id != saved.id)
-              m,
+            if (m.id == optimistic.id) saved else if (m.id != saved.id) m,
         ],
       );
     } catch (e) {

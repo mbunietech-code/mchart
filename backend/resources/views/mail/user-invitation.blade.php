@@ -1,12 +1,12 @@
 <x-mail::message>
-# Karibu MChart, {{ $user->name }}!
+# Karibu MChat, {{ $user->name }}!
 
-{{ $invitedBy }} has created your MChart account — the Mbunietech workspace for team chat, tasks and announcements.
+{{ $invitedBy }} has created your MChat account — the Mbunietech workspace for team chat, tasks and announcements.
 
 **1. Download the app**
 
 <x-mail::button :url="$apkUrl">
-Download MChart for Android (v{{ $version }})
+Download MChat for Android (v{{ $version }})
 </x-mail::button>
 
 On a Windows PC: [download the installer (v{{ $version }})]({{ $windowsUrl }}). All downloads: [{{ $downloadUrl }}]({{ $downloadUrl }})

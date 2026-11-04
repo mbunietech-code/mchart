@@ -23,6 +23,9 @@ class ConversationController extends Controller
                 $join->on('me.conversation_id', '=', 'conversations.id')->where('me.user_id', '=', $user->id);
             })
             ->select('conversations.*', 'me.pinned_at as my_pinned_at', 'me.archived_at as my_archived_at', 'me.muted as my_muted')
+            // Chats this user deleted stay hidden until something new arrives.
+            ->where(fn ($q) => $q->whereNull('me.cleared_at')
+                ->orWhereColumn('conversations.last_message_at', '>', 'me.cleared_at'))
             ->with(['users', 'latestMessage.sender'])
             // Pinned chats first (newest pin on top), then by activity.
             ->orderByRaw('me.pinned_at IS NULL, me.pinned_at DESC')
@@ -129,6 +132,17 @@ class ConversationController extends Controller
             'archived' => $participant->archived_at !== null,
             'muted' => (bool) $participant->muted,
         ]]);
+    }
+
+    /** "Delete chat": clears it from this user's list and history only. */
+    public function destroy(Request $request, Conversation $conversation): JsonResponse
+    {
+        $this->authorize('view', $conversation);
+
+        $conversation->participants()->where('user_id', $request->user()->id)
+            ->update(['cleared_at' => now(), 'pinned_at' => null, 'last_read_at' => now()]);
+
+        return response()->json(null, 204);
     }
 
     public function update(Request $request, Conversation $conversation): ConversationResource

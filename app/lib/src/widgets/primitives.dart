@@ -4,7 +4,7 @@ import '../theme/app_color.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
 
-/// White rounded panel with the standard MChart card border + shadow.
+/// White rounded panel with the standard MChat card border + shadow.
 class AppCard extends StatelessWidget {
   const AppCard({
     super.key,

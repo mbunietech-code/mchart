@@ -52,7 +52,9 @@ class _Panel extends ConsumerWidget {
       child: Container(
         width: (MediaQuery.sizeOf(context).width - 24).clamp(0, 380).toDouble(),
         constraints: BoxConstraints(
-          maxHeight: (MediaQuery.sizeOf(context).height - 120).clamp(0, 560).toDouble(),
+          maxHeight: (MediaQuery.sizeOf(context).height - 120)
+              .clamp(0, 560)
+              .toDouble(),
         ),
         decoration: BoxDecoration(
           color: AppColor.surface,

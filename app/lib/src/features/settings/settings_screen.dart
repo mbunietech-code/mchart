@@ -456,7 +456,10 @@ class _UserRow extends ConsumerWidget {
               ).textTheme.bodySmall?.copyWith(color: AppColor.brand),
             ),
           ),
-          Expanded(flex: 2, child: _RoleBadge(role: user.role, title: user.roleLabel)),
+          Expanded(
+            flex: 2,
+            child: _RoleBadge(role: user.role, title: user.roleLabel),
+          ),
           Expanded(
             flex: 2,
             child: StatusPill(

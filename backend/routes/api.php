@@ -76,6 +76,7 @@ Route::middleware(['auth:sanctum', 'active', 'password.changed'])->group(functio
     Route::post('conversations', [ConversationController::class, 'store']);
     Route::get('conversations/{conversation}', [ConversationController::class, 'show']);
     Route::patch('conversations/{conversation}', [ConversationController::class, 'update']);
+    Route::delete('conversations/{conversation}', [ConversationController::class, 'destroy']);
     Route::patch('conversations/{conversation}/preferences', [ConversationController::class, 'preferences']);
     Route::post('conversations/{conversation}/participants', [ConversationParticipantController::class, 'store']);
     Route::delete('conversations/{conversation}/participants/{user}', [ConversationParticipantController::class, 'destroy']);

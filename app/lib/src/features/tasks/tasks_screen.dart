@@ -87,43 +87,51 @@ class TasksScreen extends ConsumerWidget {
                   message: 'New tasks will appear here once they\'re created.',
                 );
               }
-              // Columns scroll sideways; each column's cards scroll on their
-              // own, so a long column never overflows the screen.
-              return LayoutBuilder(
-                builder: (context, constraints) {
-                  final narrow = constraints.maxWidth < 600;
-                  final columnWidth = narrow
-                      ? constraints.maxWidth * 0.82
-                      : 300.0;
-                  final side = narrow ? 16.0 : 28.0;
-                  return RefreshIndicator(
-                    // Pull-to-refresh from inside any column's list.
-                    notificationPredicate: (n) => n.depth == 1,
-                    onRefresh: () async => ref.invalidate(taskBoardProvider),
-                    child: SingleChildScrollView(
-                      scrollDirection: Axis.horizontal,
-                      padding: EdgeInsets.fromLTRB(side, 4, side, 0),
-                      child: SizedBox(
-                        height: constraints.maxHeight - 4,
-                        child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            for (final status in _columns) ...[
-                              _Column(
+              // One tab per status (no sideways board); each tab's cards
+              // scroll on their own.
+              final side = MediaQuery.sizeOf(context).width < 600 ? 16.0 : 28.0;
+              return DefaultTabController(
+                length: _columns.length,
+                child: Column(
+                  children: [
+                    Padding(
+                      padding: EdgeInsets.symmetric(horizontal: side - 12),
+                      child: TabBar(
+                        isScrollable: true,
+                        tabAlignment: TabAlignment.start,
+                        tabs: [
+                          for (final status in _columns)
+                            Tab(
+                              child: _TabLabel(
                                 status: status,
-                                width: columnWidth,
+                                count: tasks
+                                    .where((t) => t.status == status)
+                                    .length,
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                    Expanded(
+                      child: TabBarView(
+                        children: [
+                          for (final status in _columns)
+                            RefreshIndicator(
+                              onRefresh: () async =>
+                                  ref.invalidate(taskBoardProvider),
+                              child: _StatusList(
+                                status: status,
+                                side: side,
                                 tasks: tasks
                                     .where((t) => t.status == status)
                                     .toList(),
                               ),
-                              Gap.lg,
-                            ],
-                          ],
-                        ),
+                            ),
+                        ],
                       ),
                     ),
-                  );
-                },
+                  ],
+                ),
               );
             },
           ),
@@ -159,77 +167,87 @@ class _ToggleChip extends StatelessWidget {
   }
 }
 
-class _Column extends StatelessWidget {
-  const _Column({
-    required this.status,
-    required this.tasks,
-    required this.width,
-  });
+class _TabLabel extends StatelessWidget {
+  const _TabLabel({required this.status, required this.count});
   final TaskStatus status;
-  final List<Task> tasks;
-  final double width;
+  final int count;
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      width: width,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 8,
+          height: 8,
+          decoration: BoxDecoration(
+            color: status.color,
+            shape: BoxShape.circle,
+          ),
+        ),
+        Gap.sm,
+        Text(status.label),
+        Gap.sm,
+        Text(
+          '$count',
+          style: const TextStyle(
+            fontWeight: FontWeight.w700,
+            color: AppColor.textMuted,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _StatusList extends StatelessWidget {
+  const _StatusList({
+    required this.status,
+    required this.tasks,
+    required this.side,
+  });
+  final TaskStatus status;
+  final List<Task> tasks;
+  final double side;
+
+  @override
+  Widget build(BuildContext context) {
+    final padding = EdgeInsets.fromLTRB(side, 16, side, 24);
+    if (tasks.isEmpty) {
+      return ListView(
+        padding: padding,
+        physics: const AlwaysScrollableScrollPhysics(),
         children: [
-          Row(
+          EmptyState(
+            icon: Icons.checklist_rounded,
+            title: 'No ${status.label.toLowerCase()} tasks',
+            message: 'Tasks in this stage will show here.',
+          ),
+        ],
+      );
+    }
+    // Phones get one column; wider windows lay cards out side by side.
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final inner = constraints.maxWidth - side * 2;
+        final perRow = (inner / 380).floor().clamp(1, 4);
+        final cardWidth = (inner - 16 * (perRow - 1)) / perRow;
+        return SingleChildScrollView(
+          padding: padding,
+          physics: const AlwaysScrollableScrollPhysics(),
+          child: Wrap(
+            spacing: 16,
+            runSpacing: 12,
             children: [
-              Container(
-                width: 8,
-                height: 8,
-                decoration: BoxDecoration(
-                  color: status.color,
-                  shape: BoxShape.circle,
+              for (final t in tasks)
+                SizedBox(
+                  width: cardWidth,
+                  child: _TaskCard(task: t),
                 ),
-              ),
-              Gap.sm,
-              Text(status.label, style: Theme.of(context).textTheme.titleSmall),
-              Gap.sm,
-              Text(
-                '${tasks.length}',
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  fontWeight: FontWeight.w700,
-                  color: AppColor.textMuted,
-                ),
-              ),
             ],
           ),
-          Gap.md,
-          if (tasks.isEmpty)
-            Container(
-              height: 90,
-              alignment: Alignment.center,
-              decoration: BoxDecoration(
-                borderRadius: AppRadius.lg,
-                border: Border.all(
-                  color: AppColor.border,
-                  style: BorderStyle.solid,
-                ),
-                color: AppColor.surfaceMuted,
-              ),
-              child: Text(
-                'None',
-                style: Theme.of(
-                  context,
-                ).textTheme.bodySmall?.copyWith(color: AppColor.textMuted),
-              ),
-            )
-          else
-            Expanded(
-              child: ListView.separated(
-                padding: const EdgeInsets.only(bottom: 24),
-                physics: const AlwaysScrollableScrollPhysics(),
-                itemCount: tasks.length,
-                separatorBuilder: (context, index) => Gap.md,
-                itemBuilder: (_, i) => _TaskCard(task: tasks[i]),
-              ),
-            ),
-        ],
-      ),
+        );
+      },
     );
   }
 }

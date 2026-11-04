@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-/// The MChart mark — the navy rounded tile with the white chat bubble,
+/// The MChat mark — the navy rounded tile with the white chat bubble,
 /// the same artwork as the launcher icon.
 class MChartLogo extends StatelessWidget {
   const MChartLogo({super.key, this.size = 34});

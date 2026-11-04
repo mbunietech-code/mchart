@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Reset password · MChart</title>
+    <title>Reset password · MChat</title>
     <style>
         :root { --brand: #1E40AF; --text: #0F172A; --muted: #64748B; --border: #E2E8F0; --danger: #EF4444; --ok: #10B981; }
         * { box-sizing: border-box; }
@@ -24,7 +24,7 @@
 <div class="card">
     @if (! empty($done))
         <h1>Password changed</h1>
-        <p class="ok">Your new password is set. Open the MChart app and sign in with it.</p>
+        <p class="ok">Your new password is set. Open the MChat app and sign in with it.</p>
     @else
         <h1>Choose a new password</h1>
         <p>For {{ $email }}</p>

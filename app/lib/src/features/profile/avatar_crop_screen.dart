@@ -49,9 +49,8 @@ class _AvatarCropScreenState extends State<AvatarCropScreen> {
   }
 
   /// The picture's size so it just covers the square.
-  Size _coverSize(double side) => _aspect! >= 1
-      ? Size(side * _aspect!, side)
-      : Size(side, side / _aspect!);
+  Size _coverSize(double side) =>
+      _aspect! >= 1 ? Size(side * _aspect!, side) : Size(side, side / _aspect!);
 
   Future<void> _done() async {
     setState(() => _saving = true);

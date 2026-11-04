@@ -50,7 +50,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           .login(
             email: _email.text.trim(),
             password: _password.text,
-            deviceName: 'MChart Desktop',
+            deviceName: 'MChat Desktop',
           );
     } on ApiException catch (e) {
       setState(
@@ -98,7 +98,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                'MChart',
+                                'MChat',
                                 style: t.titleLarge?.copyWith(fontSize: 18),
                               ),
                               Text(

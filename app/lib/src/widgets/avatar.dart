@@ -58,8 +58,8 @@ class AppAvatar extends StatelessWidget {
                 height: size,
                 fit: BoxFit.cover,
                 // Decode at display size, not the full upload.
-                cacheWidth:
-                    (size * MediaQuery.devicePixelRatioOf(context)).round(),
+                cacheWidth: (size * MediaQuery.devicePixelRatioOf(context))
+                    .round(),
                 // Initials until the photo arrives, or if it can't load.
                 frameBuilder: (context, child, frame, sync) =>
                     frame == null && !sync ? initials : child,

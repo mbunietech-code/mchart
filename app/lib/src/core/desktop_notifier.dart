@@ -6,7 +6,7 @@ import '../models/app_notification.dart';
 
 /// Windows toasts. FCM doesn't reach desktop, so new notifications that
 /// arrive while the app runs (realtime or polling) pop a toast whenever the
-/// MChart window isn't the one in front.
+/// MChat window isn't the one in front.
 class DesktopNotifier {
   static bool get supported =>
       !kIsWeb && defaultTargetPlatform == TargetPlatform.windows;
@@ -15,7 +15,7 @@ class DesktopNotifier {
     if (!supported) return;
     try {
       await localNotifier.setup(
-        appName: 'MChart',
+        appName: 'MChat',
         shortcutPolicy: ShortcutPolicy.requireCreate,
       );
     } catch (e) {
