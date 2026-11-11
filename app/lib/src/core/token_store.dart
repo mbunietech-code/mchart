@@ -13,7 +13,13 @@ class TokenStore {
   // AES-GCM with RSA OAEP key wrapping — stronger than the old
   // encryptedSharedPreferences flag this replaced, so no options needed.
   TokenStore([FlutterSecureStorage? storage])
-    : _storage = storage ?? const FlutterSecureStorage();
+    // macOS: the legacy keychain needs no keychain-access-groups
+    // entitlement / provisioning profile (ad-hoc or Developer ID builds).
+    : _storage =
+          storage ??
+          const FlutterSecureStorage(
+            mOptions: MacOsOptions(usesDataProtectionKeychain: false),
+          );
 
   static const _key = 'mchart.token';
   final FlutterSecureStorage _storage;

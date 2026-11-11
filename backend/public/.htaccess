@@ -1,3 +1,8 @@
+# Downloads page: serve the Mac disk image as a file, not text.
+<IfModule mod_mime.c>
+    AddType application/x-apple-diskimage .dmg
+</IfModule>
+
 <IfModule mod_rewrite.c>
     <IfModule mod_negotiation.c>
         Options -MultiViews -Indexes

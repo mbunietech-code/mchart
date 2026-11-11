@@ -11,19 +11,20 @@ flutter pub get
 flutter run -d windows      # or: -d macos, -d <android-device>
 ```
 
-Point it at a non-default API with dart-defines:
+Defaults target production: `https://chart.mbunie.tech` with realtime on
+`wss://ws.mbunie.tech`. To use a local backend instead, pass dart-defines:
 
 ```bash
 flutter run -d windows \
   --dart-define=MCHART_API=http://localhost:8000 \
   --dart-define=MCHART_REVERB_HOST=localhost \
   --dart-define=MCHART_REVERB_PORT=8080 \
+  --dart-define=MCHART_REVERB_SCHEME=ws \
   --dart-define=MCHART_REVERB_KEY=mchart-local-key
 ```
 
-Defaults already target a local backend on `http://localhost:8000` with Reverb
-on `ws://localhost:8080`. Start the backend, `php artisan reverb:start`, and
-`php artisan queue:work` first.
+Start the backend, `php artisan reverb:start`, and `php artisan queue:work`
+first.
 
 Seeded demo logins (password `password`): `manager@mbunietech.com`,
 `dev1@mbunietech.com`, `admin@mbunietech.com`.

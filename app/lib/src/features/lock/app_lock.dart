@@ -22,7 +22,13 @@ class AppLockState {
 /// background. Only a salted hash is kept, in the OS secure store.
 class AppLock extends StateNotifier<AppLockState> with WidgetsBindingObserver {
   AppLock([FlutterSecureStorage? storage])
-    : _storage = storage ?? const FlutterSecureStorage(),
+    // macOS: the legacy keychain needs no keychain-access-groups
+    // entitlement / provisioning profile (ad-hoc or Developer ID builds).
+    : _storage =
+          storage ??
+          const FlutterSecureStorage(
+            mOptions: MacOsOptions(usesDataProtectionKeychain: false),
+          ),
       super(const AppLockState()) {
     WidgetsBinding.instance.addObserver(this);
     _load();

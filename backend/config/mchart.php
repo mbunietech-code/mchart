@@ -12,6 +12,10 @@ return [
     // downloads page (resources/views/welcome.blade.php) by default.
     'download_url' => env('MCHART_DOWNLOAD_URL', rtrim((string) env('APP_URL'), '/').'/'),
 
+    // App Store or TestFlight link for the iPhone card on the downloads page
+    // (iOS apps can't be installed from a file). "Coming soon" when empty.
+    'ios_url' => env('MCHART_IOS_URL'),
+
     // Optional browser version of the app; omitted from emails when empty.
     'web_url' => env('MCHART_WEB_URL'),
 

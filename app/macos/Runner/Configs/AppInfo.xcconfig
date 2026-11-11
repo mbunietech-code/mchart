@@ -5,10 +5,10 @@
 // 'flutter create' template.
 
 // The application's name. By default this is also the title of the Flutter window.
-PRODUCT_NAME = mchart
+PRODUCT_NAME = MChart
 
 // The application's bundle identifier
-PRODUCT_BUNDLE_IDENTIFIER = com.mbunietech.mchart
+PRODUCT_BUNDLE_IDENTIFIER = tech.mbunie.mchart
 
 // The copyright displayed in application information
 PRODUCT_COPYRIGHT = Copyright © 2026 com.mbunietech. All rights reserved.

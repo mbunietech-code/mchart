@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>MChat — Mbunietech Workspace</title>
-    <meta name="description" content="Download MChat for Windows and Android, or open the web app.">
+    <meta name="description" content="Download MChat for Windows, macOS, Android and iPhone.">
     <link rel="icon" type="image/png" href="{{ asset('favicon.png') }}">
 
     <style>
@@ -71,6 +71,8 @@
         .btn-disabled { background: var(--bg); color: var(--slate-light); border: 1px solid var(--border); cursor: not-allowed; pointer-events: none; }
         .icon-android { background: #ECFDF5; color: var(--success); }
         .icon-windows { background: #FFFBEB; color: var(--amber); }
+        .icon-apple { background: #F1F5F9; color: var(--dark); }
+        .card p.note { font-size: 12px; color: var(--slate); margin: 10px 0 0; line-height: 1.5; }
         footer { margin-top: 56px; font-size: 12px; color: var(--slate-light); text-align: center; }
         footer a { color: var(--slate); }
     </style>
@@ -89,6 +91,10 @@
         $msiPath = public_path('downloads/'.$winFile);
         $apkExists = file_exists($apkPath);
         $msiExists = file_exists($msiPath);
+        $dmgPath = public_path('downloads/MChart-macOS.dmg');
+        $dmgExists = file_exists($dmgPath);
+        // iPhone apps can't be installed from a website: App Store / TestFlight link.
+        $iosUrl = config('mchart.ios_url');
         $fmtSize = fn ($bytes) => number_format($bytes / 1048576, 1) . ' MB';
     @endphp
 
@@ -116,6 +122,34 @@
             @if ($msiExists)
                 <a class="btn btn-primary" href="{{ asset('downloads/'.$winFile) }}">Download Installer ↓</a>
                 <p class="meta">{{ $fmtSize(filesize($msiPath)) }} · v{{ config('mchart.app_version', '1.0.0') }}</p>
+            @else
+                <a class="btn btn-disabled">Coming soon</a>
+            @endif
+        </div>
+
+        <div class="card">
+            <div class="icon icon-apple">
+                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M16.37 12.6c-.02-2.3 1.88-3.4 1.96-3.46-1.07-1.56-2.73-1.78-3.32-1.8-1.41-.14-2.76.83-3.47.83-.72 0-1.82-.81-3-.79-1.54.02-2.96.9-3.76 2.28-1.6 2.78-.41 6.9 1.15 9.16.76 1.1 1.67 2.34 2.86 2.3 1.15-.05 1.58-.74 2.97-.74 1.38 0 1.77.74 2.98.72 1.23-.02 2.01-1.12 2.76-2.23.87-1.28 1.23-2.51 1.25-2.58-.03-.01-2.4-.92-2.42-3.66zM14.1 5.84c.63-.77 1.06-1.83.94-2.89-.91.04-2.01.6-2.66 1.37-.58.67-1.1 1.76-.96 2.8 1.01.08 2.05-.52 2.68-1.28z"/></svg>
+            </div>
+            <h2>macOS</h2>
+            <p class="desc">Open the disk image and drag MChat into Applications. Works on Apple Silicon and Intel Macs (macOS 12+).</p>
+            @if ($dmgExists)
+                <a class="btn btn-primary" href="{{ asset('downloads/MChart-macOS.dmg') }}?v={{ filemtime($dmgPath) }}">Download for Mac ↓</a>
+                <p class="meta">{{ $fmtSize(filesize($dmgPath)) }} · v{{ config('mchart.app_version', '1.0.0') }}</p>
+                <p class="note">First launch: if macOS says it can't verify MChat, open System Settings → Privacy &amp; Security and click <strong>Open Anyway</strong>.</p>
+            @else
+                <a class="btn btn-disabled">Coming soon</a>
+            @endif
+        </div>
+
+        <div class="card">
+            <div class="icon icon-apple">
+                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M16.37 12.6c-.02-2.3 1.88-3.4 1.96-3.46-1.07-1.56-2.73-1.78-3.32-1.8-1.41-.14-2.76.83-3.47.83-.72 0-1.82-.81-3-.79-1.54.02-2.96.9-3.76 2.28-1.6 2.78-.41 6.9 1.15 9.16.76 1.1 1.67 2.34 2.86 2.3 1.15-.05 1.58-.74 2.97-.74 1.38 0 1.77.74 2.98.72 1.23-.02 2.01-1.12 2.76-2.23.87-1.28 1.23-2.51 1.25-2.58-.03-.01-2.4-.92-2.42-3.66zM14.1 5.84c.63-.77 1.06-1.83.94-2.89-.91.04-2.01.6-2.66 1.37-.58.67-1.1 1.76-.96 2.8 1.01.08 2.05-.52 2.68-1.28z"/></svg>
+            </div>
+            <h2>iPhone &amp; iPad</h2>
+            <p class="desc">Install MChat from Apple on iOS 15 or later.</p>
+            @if ($iosUrl)
+                <a class="btn btn-primary" href="{{ $iosUrl }}">Get it on iPhone ↗</a>
             @else
                 <a class="btn btn-disabled">Coming soon</a>
             @endif
